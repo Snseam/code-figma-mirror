@@ -1,0 +1,2973 @@
+{
+  "version": 1,
+  "project": "Field notes",
+  "boards": [
+    {
+      "id": "phone/open",
+      "state": "open",
+      "viewport": "phone",
+      "width": 375,
+      "height": 700,
+      "children": [
+        {
+          "id": "phone/open#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 700,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "phone/open#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 375,
+              "height": 548,
+              "style": {},
+              "children": [
+                {
+                  "id": "phone/open#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 375,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "phone/open#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 16,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "phone/open##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 56,
+                  "width": 375,
+                  "height": 492,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "phone/open##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 24,
+                      "width": 343,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/open##app>:nth-child(1)/text-1@0",
+                          "name": "Surveys",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 124.53125,
+                          "height": 36,
+                          "text": "Surveys",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "phone/open##app>:nth-child(2)",
+                      "name": "Survey status",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 88,
+                      "width": 343,
+                      "height": 36,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/open##tab-open",
+                          "name": "Tab",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 0,
+                          "width": 67.78125,
+                          "height": 36,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Tab",
+                          "variant": "Selected",
+                          "children": [
+                            {
+                              "id": "phone/open##tab-open/text-1@0",
+                              "name": "Open",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 10,
+                              "width": 35.78125,
+                              "height": 16,
+                              "text": "Open",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/open##tab-closed",
+                          "name": "Tab",
+                          "kind": "frame",
+                          "x": 75.78125,
+                          "y": 0,
+                          "width": 78.6875,
+                          "height": 36,
+                          "style": {
+                            "fill": "#E3ECE6",
+                            "radius": 8
+                          },
+                          "component": "Tab",
+                          "variant": "Rest",
+                          "children": [
+                            {
+                              "id": "phone/open##tab-closed/text-1@0",
+                              "name": "Closed",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 10,
+                              "width": 46.6875,
+                              "height": 16,
+                              "text": "Closed",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#185C51",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "phone/open##list-open",
+                      "name": "list-open",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 144,
+                      "width": 343,
+                      "height": 324,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/open##card-river",
+                          "name": "Survey card",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 0,
+                          "width": 343,
+                          "height": 154,
+                          "style": {
+                            "fill": "#FFFFFF",
+                            "stroke": "#C7D2CC",
+                            "strokeWidth": 1,
+                            "radius": 12
+                          },
+                          "component": "Survey card",
+                          "children": [
+                            {
+                              "id": "phone/open##card-river>:nth-child(1)",
+                              "name": "h2",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 21,
+                              "width": 301,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "phone/open##card-river>:nth-child(1)/text-1@0",
+                                  "name": "North river",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 2,
+                                  "width": 92.03125,
+                                  "height": 20,
+                                  "text": "North river",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 18,
+                                    "lineHeight": 24,
+                                    "color": "#202B2B",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "phone/open##card-river>:nth-child(2)",
+                              "name": "p",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 53,
+                              "width": 301,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "phone/open##card-river>:nth-child(2)/text-1@0",
+                                  "name": "Water survey",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 3,
+                                  "width": 93.65625,
+                                  "height": 17,
+                                  "text": "Water survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Regular",
+                                    "fontSize": 16,
+                                    "lineHeight": 24,
+                                    "color": "#185C51",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "phone/open##open-river",
+                              "name": "Action",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 93,
+                              "width": 112.6875,
+                              "height": 40,
+                              "style": {
+                                "fill": "#185C51",
+                                "radius": 8
+                              },
+                              "component": "Action",
+                              "children": [
+                                {
+                                  "id": "phone/open##open-river/text-1@0",
+                                  "name": "View survey",
+                                  "kind": "text",
+                                  "x": 16,
+                                  "y": 12,
+                                  "width": 80.6875,
+                                  "height": 16,
+                                  "text": "View survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 14,
+                                    "lineHeight": 20,
+                                    "color": "#FFFFFF",
+                                    "align": "CENTER"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/open##card-ridge",
+                          "name": "Survey card",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 170,
+                          "width": 343,
+                          "height": 154,
+                          "style": {
+                            "fill": "#FFFFFF",
+                            "stroke": "#C7D2CC",
+                            "strokeWidth": 1,
+                            "radius": 12
+                          },
+                          "component": "Survey card",
+                          "children": [
+                            {
+                              "id": "phone/open##card-ridge>:nth-child(1)",
+                              "name": "h2",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 21,
+                              "width": 301,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "phone/open##card-ridge>:nth-child(1)/text-1@0",
+                                  "name": "Cedar ridge",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 2,
+                                  "width": 100.03125,
+                                  "height": 20,
+                                  "text": "Cedar ridge",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 18,
+                                    "lineHeight": 24,
+                                    "color": "#202B2B",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "phone/open##card-ridge>:nth-child(2)",
+                              "name": "p",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 53,
+                              "width": 301,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "phone/open##card-ridge>:nth-child(2)/text-1@0",
+                                  "name": "Trail survey",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 3,
+                                  "width": 82.09375,
+                                  "height": 17,
+                                  "text": "Trail survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Regular",
+                                    "fontSize": 16,
+                                    "lineHeight": 24,
+                                    "color": "#185C51",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "phone/open##open-ridge",
+                              "name": "Action",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 93,
+                              "width": 112.6875,
+                              "height": 40,
+                              "style": {
+                                "fill": "#185C51",
+                                "radius": 8
+                              },
+                              "component": "Action",
+                              "children": [
+                                {
+                                  "id": "phone/open##open-ridge/text-1@0",
+                                  "name": "View survey",
+                                  "kind": "text",
+                                  "x": 16,
+                                  "y": 12,
+                                  "width": 80.6875,
+                                  "height": 16,
+                                  "text": "View survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 14,
+                                    "lineHeight": 20,
+                                    "color": "#FFFFFF",
+                                    "align": "CENTER"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phone/closed",
+      "state": "closed",
+      "viewport": "phone",
+      "width": 375,
+      "height": 700,
+      "children": [
+        {
+          "id": "phone/closed#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 700,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "phone/closed#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 375,
+              "height": 378,
+              "style": {},
+              "children": [
+                {
+                  "id": "phone/closed#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 375,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "phone/closed#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 16,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "phone/closed##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 56,
+                  "width": 375,
+                  "height": 322,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "phone/closed##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 24,
+                      "width": 343,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/closed##app>:nth-child(1)/text-1@0",
+                          "name": "Surveys",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 124.53125,
+                          "height": 36,
+                          "text": "Surveys",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "phone/closed##app>:nth-child(2)",
+                      "name": "Survey status",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 88,
+                      "width": 343,
+                      "height": 36,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/closed##tab-open",
+                          "name": "Tab",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 0,
+                          "width": 67.78125,
+                          "height": 36,
+                          "style": {
+                            "fill": "#E3ECE6",
+                            "radius": 8
+                          },
+                          "component": "Tab",
+                          "variant": "Rest",
+                          "children": [
+                            {
+                              "id": "phone/closed##tab-open/text-1@0",
+                              "name": "Open",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 10,
+                              "width": 35.78125,
+                              "height": 16,
+                              "text": "Open",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#185C51",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/closed##tab-closed",
+                          "name": "Tab",
+                          "kind": "frame",
+                          "x": 75.78125,
+                          "y": 0,
+                          "width": 78.6875,
+                          "height": 36,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Tab",
+                          "variant": "Selected",
+                          "children": [
+                            {
+                              "id": "phone/closed##tab-closed/text-1@0",
+                              "name": "Closed",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 10,
+                              "width": 46.6875,
+                              "height": 16,
+                              "text": "Closed",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "phone/closed##list-closed",
+                      "name": "list-closed",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 144,
+                      "width": 343,
+                      "height": 154,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/closed##card-quarry",
+                          "name": "Survey card",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 0,
+                          "width": 343,
+                          "height": 154,
+                          "style": {
+                            "fill": "#FFFFFF",
+                            "stroke": "#C7D2CC",
+                            "strokeWidth": 1,
+                            "radius": 12
+                          },
+                          "component": "Survey card",
+                          "children": [
+                            {
+                              "id": "phone/closed##card-quarry>:nth-child(1)",
+                              "name": "h2",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 21,
+                              "width": 301,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "phone/closed##card-quarry>:nth-child(1)/text-1@0",
+                                  "name": "Old quarry",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 2,
+                                  "width": 91.03125,
+                                  "height": 20,
+                                  "text": "Old quarry",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 18,
+                                    "lineHeight": 24,
+                                    "color": "#202B2B",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "phone/closed##card-quarry>:nth-child(2)",
+                              "name": "p",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 53,
+                              "width": 301,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "phone/closed##card-quarry>:nth-child(2)/text-1@0",
+                                  "name": "Soil survey",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 3,
+                                  "width": 78.25,
+                                  "height": 17,
+                                  "text": "Soil survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Regular",
+                                    "fontSize": 16,
+                                    "lineHeight": 24,
+                                    "color": "#185C51",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "phone/closed##open-quarry",
+                              "name": "Action",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 93,
+                              "width": 112.6875,
+                              "height": 40,
+                              "style": {
+                                "fill": "#185C51",
+                                "radius": 8
+                              },
+                              "component": "Action",
+                              "children": [
+                                {
+                                  "id": "phone/closed##open-quarry/text-1@0",
+                                  "name": "View survey",
+                                  "kind": "text",
+                                  "x": 16,
+                                  "y": 12,
+                                  "width": 80.6875,
+                                  "height": 16,
+                                  "text": "View survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 14,
+                                    "lineHeight": 20,
+                                    "color": "#FFFFFF",
+                                    "align": "CENTER"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phone/river",
+      "state": "river",
+      "viewport": "phone",
+      "width": 375,
+      "height": 700,
+      "children": [
+        {
+          "id": "phone/river#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 700,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "phone/river#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 375,
+              "height": 346,
+              "style": {},
+              "children": [
+                {
+                  "id": "phone/river#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 375,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "phone/river#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 16,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "phone/river##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 56,
+                  "width": 375,
+                  "height": 290,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "phone/river##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 24,
+                      "width": 343,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/river##app>:nth-child(1)/text-1@0",
+                          "name": "Survey detail",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 199.203125,
+                          "height": 36,
+                          "text": "Survey detail",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "phone/river##detail-river",
+                      "name": "detail-river",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 88,
+                      "width": 343,
+                      "height": 178,
+                      "style": {
+                        "fill": "#FFFFFF",
+                        "stroke": "#C7D2CC",
+                        "strokeWidth": 1,
+                        "radius": 12
+                      },
+                      "children": [
+                        {
+                          "id": "phone/river##detail-river>:nth-child(1)",
+                          "name": "h2",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 21,
+                          "width": 301,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "phone/river##detail-river>:nth-child(1)/text-1@0",
+                              "name": "North river",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 2,
+                              "width": 92.03125,
+                              "height": 20,
+                              "text": "North river",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 18,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/river##detail-river>:nth-child(2)",
+                          "name": "p",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 53,
+                          "width": 301,
+                          "height": 48,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "phone/river##detail-river>:nth-child(2)/text-1@0",
+                              "name": "Collect a second sample from the",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 3,
+                              "width": 237.453125,
+                              "height": 17,
+                              "text": "Collect a second sample from the ",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Regular",
+                                "fontSize": 16,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            },
+                            {
+                              "id": "phone/river##detail-river>:nth-child(2)/text-1@33",
+                              "name": "footbridge.",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 27,
+                              "width": 75.609375,
+                              "height": 17,
+                              "text": "footbridge.",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Regular",
+                                "fontSize": 16,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/river##return",
+                          "name": "Action",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 117,
+                          "width": 139.40625,
+                          "height": 40,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Action",
+                          "children": [
+                            {
+                              "id": "phone/river##return/text-1@0",
+                              "name": "Back to surveys",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 12,
+                              "width": 107.40625,
+                              "height": 16,
+                              "text": "Back to surveys",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phone/ridge",
+      "state": "ridge",
+      "viewport": "phone",
+      "width": 375,
+      "height": 700,
+      "children": [
+        {
+          "id": "phone/ridge#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 700,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "phone/ridge#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 375,
+              "height": 322,
+              "style": {},
+              "children": [
+                {
+                  "id": "phone/ridge#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 375,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "phone/ridge#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 16,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "phone/ridge##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 56,
+                  "width": 375,
+                  "height": 266,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "phone/ridge##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 24,
+                      "width": 343,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/ridge##app>:nth-child(1)/text-1@0",
+                          "name": "Survey detail",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 199.203125,
+                          "height": 36,
+                          "text": "Survey detail",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "phone/ridge##detail-ridge",
+                      "name": "detail-ridge",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 88,
+                      "width": 343,
+                      "height": 154,
+                      "style": {
+                        "fill": "#FFFFFF",
+                        "stroke": "#C7D2CC",
+                        "strokeWidth": 1,
+                        "radius": 12
+                      },
+                      "children": [
+                        {
+                          "id": "phone/ridge##detail-ridge>:nth-child(1)",
+                          "name": "h2",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 21,
+                          "width": 301,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "phone/ridge##detail-ridge>:nth-child(1)/text-1@0",
+                              "name": "Cedar ridge",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 2,
+                              "width": 100.03125,
+                              "height": 20,
+                              "text": "Cedar ridge",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 18,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/ridge##detail-ridge>:nth-child(2)",
+                          "name": "p",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 53,
+                          "width": 301,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "phone/ridge##detail-ridge>:nth-child(2)/text-1@0",
+                              "name": "Check the marker at the eastern fork.",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 3,
+                              "width": 264.125,
+                              "height": 17,
+                              "text": "Check the marker at the eastern fork.",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Regular",
+                                "fontSize": 16,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/ridge##return",
+                          "name": "Action",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 93,
+                          "width": 139.40625,
+                          "height": 40,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Action",
+                          "children": [
+                            {
+                              "id": "phone/ridge##return/text-1@0",
+                              "name": "Back to surveys",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 12,
+                              "width": 107.40625,
+                              "height": 16,
+                              "text": "Back to surveys",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phone/quarry",
+      "state": "quarry",
+      "viewport": "phone",
+      "width": 375,
+      "height": 700,
+      "children": [
+        {
+          "id": "phone/quarry#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 700,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "phone/quarry#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 375,
+              "height": 346,
+              "style": {},
+              "children": [
+                {
+                  "id": "phone/quarry#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 375,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "phone/quarry#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 16,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "phone/quarry##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 56,
+                  "width": 375,
+                  "height": 290,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "phone/quarry##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 24,
+                      "width": 343,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "phone/quarry##app>:nth-child(1)/text-1@0",
+                          "name": "Survey detail",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 199.203125,
+                          "height": 36,
+                          "text": "Survey detail",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "phone/quarry##detail-quarry",
+                      "name": "detail-quarry",
+                      "kind": "frame",
+                      "x": 16,
+                      "y": 88,
+                      "width": 343,
+                      "height": 178,
+                      "style": {
+                        "fill": "#FFFFFF",
+                        "stroke": "#C7D2CC",
+                        "strokeWidth": 1,
+                        "radius": 12
+                      },
+                      "children": [
+                        {
+                          "id": "phone/quarry##detail-quarry>:nth-child(1)",
+                          "name": "h2",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 21,
+                          "width": 301,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "phone/quarry##detail-quarry>:nth-child(1)/text-1@0",
+                              "name": "Old quarry",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 2,
+                              "width": 91.03125,
+                              "height": 20,
+                              "text": "Old quarry",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 18,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/quarry##detail-quarry>:nth-child(2)",
+                          "name": "p",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 53,
+                          "width": 301,
+                          "height": 48,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "phone/quarry##detail-quarry>:nth-child(2)/text-1@0",
+                              "name": "The samples are catalogued and ready for",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 3,
+                              "width": 300.625,
+                              "height": 17,
+                              "text": "The samples are catalogued and ready for ",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Regular",
+                                "fontSize": 16,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            },
+                            {
+                              "id": "phone/quarry##detail-quarry>:nth-child(2)/text-1@41",
+                              "name": "review.",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 27,
+                              "width": 49.796875,
+                              "height": 17,
+                              "text": "review.",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Regular",
+                                "fontSize": 16,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "phone/quarry##return",
+                          "name": "Action",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 117,
+                          "width": 139.40625,
+                          "height": 40,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Action",
+                          "children": [
+                            {
+                              "id": "phone/quarry##return/text-1@0",
+                              "name": "Back to surveys",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 12,
+                              "width": 107.40625,
+                              "height": 16,
+                              "text": "Back to surveys",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "desktop/open",
+      "state": "open",
+      "viewport": "desktop",
+      "width": 1024,
+      "height": 720,
+      "children": [
+        {
+          "id": "desktop/open#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1024,
+          "height": 720,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "desktop/open#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 1024,
+              "height": 394,
+              "style": {},
+              "children": [
+                {
+                  "id": "desktop/open#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 1024,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "desktop/open#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 32,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "desktop/open##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 62,
+                  "y": 56,
+                  "width": 900,
+                  "height": 338,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "desktop/open##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 32,
+                      "width": 836,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/open##app>:nth-child(1)/text-1@0",
+                          "name": "Surveys",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 124.53125,
+                          "height": 36,
+                          "text": "Surveys",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "desktop/open##app>:nth-child(2)",
+                      "name": "Survey status",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 96,
+                      "width": 836,
+                      "height": 36,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/open##tab-open",
+                          "name": "Tab",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 0,
+                          "width": 67.78125,
+                          "height": 36,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Tab",
+                          "variant": "Selected",
+                          "children": [
+                            {
+                              "id": "desktop/open##tab-open/text-1@0",
+                              "name": "Open",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 10,
+                              "width": 35.78125,
+                              "height": 16,
+                              "text": "Open",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/open##tab-closed",
+                          "name": "Tab",
+                          "kind": "frame",
+                          "x": 75.78125,
+                          "y": 0,
+                          "width": 78.6875,
+                          "height": 36,
+                          "style": {
+                            "fill": "#E3ECE6",
+                            "radius": 8
+                          },
+                          "component": "Tab",
+                          "variant": "Rest",
+                          "children": [
+                            {
+                              "id": "desktop/open##tab-closed/text-1@0",
+                              "name": "Closed",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 10,
+                              "width": 46.6875,
+                              "height": 16,
+                              "text": "Closed",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#185C51",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "desktop/open##list-open",
+                      "name": "list-open",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 152,
+                      "width": 836,
+                      "height": 154,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/open##card-river",
+                          "name": "Survey card",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 0,
+                          "width": 410,
+                          "height": 154,
+                          "style": {
+                            "fill": "#FFFFFF",
+                            "stroke": "#C7D2CC",
+                            "strokeWidth": 1,
+                            "radius": 12
+                          },
+                          "component": "Survey card",
+                          "children": [
+                            {
+                              "id": "desktop/open##card-river>:nth-child(1)",
+                              "name": "h2",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 21,
+                              "width": 368,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "desktop/open##card-river>:nth-child(1)/text-1@0",
+                                  "name": "North river",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 2,
+                                  "width": 92.03125,
+                                  "height": 20,
+                                  "text": "North river",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 18,
+                                    "lineHeight": 24,
+                                    "color": "#202B2B",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "desktop/open##card-river>:nth-child(2)",
+                              "name": "p",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 53,
+                              "width": 368,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "desktop/open##card-river>:nth-child(2)/text-1@0",
+                                  "name": "Water survey",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 3,
+                                  "width": 93.65625,
+                                  "height": 17,
+                                  "text": "Water survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Regular",
+                                    "fontSize": 16,
+                                    "lineHeight": 24,
+                                    "color": "#185C51",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "desktop/open##open-river",
+                              "name": "Action",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 93,
+                              "width": 112.6875,
+                              "height": 40,
+                              "style": {
+                                "fill": "#185C51",
+                                "radius": 8
+                              },
+                              "component": "Action",
+                              "children": [
+                                {
+                                  "id": "desktop/open##open-river/text-1@0",
+                                  "name": "View survey",
+                                  "kind": "text",
+                                  "x": 16,
+                                  "y": 12,
+                                  "width": 80.6875,
+                                  "height": 16,
+                                  "text": "View survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 14,
+                                    "lineHeight": 20,
+                                    "color": "#FFFFFF",
+                                    "align": "CENTER"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/open##card-ridge",
+                          "name": "Survey card",
+                          "kind": "frame",
+                          "x": 426,
+                          "y": 0,
+                          "width": 410,
+                          "height": 154,
+                          "style": {
+                            "fill": "#FFFFFF",
+                            "stroke": "#C7D2CC",
+                            "strokeWidth": 1,
+                            "radius": 12
+                          },
+                          "component": "Survey card",
+                          "children": [
+                            {
+                              "id": "desktop/open##card-ridge>:nth-child(1)",
+                              "name": "h2",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 21,
+                              "width": 368,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "desktop/open##card-ridge>:nth-child(1)/text-1@0",
+                                  "name": "Cedar ridge",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 2,
+                                  "width": 100.03125,
+                                  "height": 20,
+                                  "text": "Cedar ridge",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 18,
+                                    "lineHeight": 24,
+                                    "color": "#202B2B",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "desktop/open##card-ridge>:nth-child(2)",
+                              "name": "p",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 53,
+                              "width": 368,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "desktop/open##card-ridge>:nth-child(2)/text-1@0",
+                                  "name": "Trail survey",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 3,
+                                  "width": 82.09375,
+                                  "height": 17,
+                                  "text": "Trail survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Regular",
+                                    "fontSize": 16,
+                                    "lineHeight": 24,
+                                    "color": "#185C51",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "desktop/open##open-ridge",
+                              "name": "Action",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 93,
+                              "width": 112.6875,
+                              "height": 40,
+                              "style": {
+                                "fill": "#185C51",
+                                "radius": 8
+                              },
+                              "component": "Action",
+                              "children": [
+                                {
+                                  "id": "desktop/open##open-ridge/text-1@0",
+                                  "name": "View survey",
+                                  "kind": "text",
+                                  "x": 16,
+                                  "y": 12,
+                                  "width": 80.6875,
+                                  "height": 16,
+                                  "text": "View survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 14,
+                                    "lineHeight": 20,
+                                    "color": "#FFFFFF",
+                                    "align": "CENTER"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "desktop/closed",
+      "state": "closed",
+      "viewport": "desktop",
+      "width": 1024,
+      "height": 720,
+      "children": [
+        {
+          "id": "desktop/closed#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1024,
+          "height": 720,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "desktop/closed#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 1024,
+              "height": 394,
+              "style": {},
+              "children": [
+                {
+                  "id": "desktop/closed#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 1024,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "desktop/closed#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 32,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "desktop/closed##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 62,
+                  "y": 56,
+                  "width": 900,
+                  "height": 338,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "desktop/closed##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 32,
+                      "width": 836,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/closed##app>:nth-child(1)/text-1@0",
+                          "name": "Surveys",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 124.53125,
+                          "height": 36,
+                          "text": "Surveys",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "desktop/closed##app>:nth-child(2)",
+                      "name": "Survey status",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 96,
+                      "width": 836,
+                      "height": 36,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/closed##tab-open",
+                          "name": "Tab",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 0,
+                          "width": 67.78125,
+                          "height": 36,
+                          "style": {
+                            "fill": "#E3ECE6",
+                            "radius": 8
+                          },
+                          "component": "Tab",
+                          "variant": "Rest",
+                          "children": [
+                            {
+                              "id": "desktop/closed##tab-open/text-1@0",
+                              "name": "Open",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 10,
+                              "width": 35.78125,
+                              "height": 16,
+                              "text": "Open",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#185C51",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/closed##tab-closed",
+                          "name": "Tab",
+                          "kind": "frame",
+                          "x": 75.78125,
+                          "y": 0,
+                          "width": 78.6875,
+                          "height": 36,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Tab",
+                          "variant": "Selected",
+                          "children": [
+                            {
+                              "id": "desktop/closed##tab-closed/text-1@0",
+                              "name": "Closed",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 10,
+                              "width": 46.6875,
+                              "height": 16,
+                              "text": "Closed",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "desktop/closed##list-closed",
+                      "name": "list-closed",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 152,
+                      "width": 836,
+                      "height": 154,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/closed##card-quarry",
+                          "name": "Survey card",
+                          "kind": "frame",
+                          "x": 0,
+                          "y": 0,
+                          "width": 410,
+                          "height": 154,
+                          "style": {
+                            "fill": "#FFFFFF",
+                            "stroke": "#C7D2CC",
+                            "strokeWidth": 1,
+                            "radius": 12
+                          },
+                          "component": "Survey card",
+                          "children": [
+                            {
+                              "id": "desktop/closed##card-quarry>:nth-child(1)",
+                              "name": "h2",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 21,
+                              "width": 368,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "desktop/closed##card-quarry>:nth-child(1)/text-1@0",
+                                  "name": "Old quarry",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 2,
+                                  "width": 91.03125,
+                                  "height": 20,
+                                  "text": "Old quarry",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 18,
+                                    "lineHeight": 24,
+                                    "color": "#202B2B",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "desktop/closed##card-quarry>:nth-child(2)",
+                              "name": "p",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 53,
+                              "width": 368,
+                              "height": 24,
+                              "style": {},
+                              "children": [
+                                {
+                                  "id": "desktop/closed##card-quarry>:nth-child(2)/text-1@0",
+                                  "name": "Soil survey",
+                                  "kind": "text",
+                                  "x": 0,
+                                  "y": 3,
+                                  "width": 78.25,
+                                  "height": 17,
+                                  "text": "Soil survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Regular",
+                                    "fontSize": 16,
+                                    "lineHeight": 24,
+                                    "color": "#185C51",
+                                    "align": "LEFT"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "id": "desktop/closed##open-quarry",
+                              "name": "Action",
+                              "kind": "frame",
+                              "x": 21,
+                              "y": 93,
+                              "width": 112.6875,
+                              "height": 40,
+                              "style": {
+                                "fill": "#185C51",
+                                "radius": 8
+                              },
+                              "component": "Action",
+                              "children": [
+                                {
+                                  "id": "desktop/closed##open-quarry/text-1@0",
+                                  "name": "View survey",
+                                  "kind": "text",
+                                  "x": 16,
+                                  "y": 12,
+                                  "width": 80.6875,
+                                  "height": 16,
+                                  "text": "View survey",
+                                  "style": {
+                                    "fontFamily": "Arial",
+                                    "fontStyle": "Bold",
+                                    "fontSize": 14,
+                                    "lineHeight": 20,
+                                    "color": "#FFFFFF",
+                                    "align": "CENTER"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "desktop/river",
+      "state": "river",
+      "viewport": "desktop",
+      "width": 1024,
+      "height": 720,
+      "children": [
+        {
+          "id": "desktop/river#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1024,
+          "height": 720,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "desktop/river#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 1024,
+              "height": 338,
+              "style": {},
+              "children": [
+                {
+                  "id": "desktop/river#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 1024,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "desktop/river#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 32,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "desktop/river##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 62,
+                  "y": 56,
+                  "width": 900,
+                  "height": 282,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "desktop/river##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 32,
+                      "width": 836,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/river##app>:nth-child(1)/text-1@0",
+                          "name": "Survey detail",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 199.203125,
+                          "height": 36,
+                          "text": "Survey detail",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "desktop/river##detail-river",
+                      "name": "detail-river",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 96,
+                      "width": 836,
+                      "height": 154,
+                      "style": {
+                        "fill": "#FFFFFF",
+                        "stroke": "#C7D2CC",
+                        "strokeWidth": 1,
+                        "radius": 12
+                      },
+                      "children": [
+                        {
+                          "id": "desktop/river##detail-river>:nth-child(1)",
+                          "name": "h2",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 21,
+                          "width": 794,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "desktop/river##detail-river>:nth-child(1)/text-1@0",
+                              "name": "North river",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 2,
+                              "width": 92.03125,
+                              "height": 20,
+                              "text": "North river",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 18,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/river##detail-river>:nth-child(2)",
+                          "name": "p",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 53,
+                          "width": 794,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "desktop/river##detail-river>:nth-child(2)/text-1@0",
+                              "name": "Collect a second sample from the footbridge.",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 3,
+                              "width": 317.5,
+                              "height": 17,
+                              "text": "Collect a second sample from the footbridge.",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Regular",
+                                "fontSize": 16,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/river##return",
+                          "name": "Action",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 93,
+                          "width": 139.40625,
+                          "height": 40,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Action",
+                          "children": [
+                            {
+                              "id": "desktop/river##return/text-1@0",
+                              "name": "Back to surveys",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 12,
+                              "width": 107.40625,
+                              "height": 16,
+                              "text": "Back to surveys",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "desktop/ridge",
+      "state": "ridge",
+      "viewport": "desktop",
+      "width": 1024,
+      "height": 720,
+      "children": [
+        {
+          "id": "desktop/ridge#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1024,
+          "height": 720,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "desktop/ridge#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 1024,
+              "height": 338,
+              "style": {},
+              "children": [
+                {
+                  "id": "desktop/ridge#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 1024,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "desktop/ridge#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 32,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "desktop/ridge##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 62,
+                  "y": 56,
+                  "width": 900,
+                  "height": 282,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "desktop/ridge##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 32,
+                      "width": 836,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/ridge##app>:nth-child(1)/text-1@0",
+                          "name": "Survey detail",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 199.203125,
+                          "height": 36,
+                          "text": "Survey detail",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "desktop/ridge##detail-ridge",
+                      "name": "detail-ridge",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 96,
+                      "width": 836,
+                      "height": 154,
+                      "style": {
+                        "fill": "#FFFFFF",
+                        "stroke": "#C7D2CC",
+                        "strokeWidth": 1,
+                        "radius": 12
+                      },
+                      "children": [
+                        {
+                          "id": "desktop/ridge##detail-ridge>:nth-child(1)",
+                          "name": "h2",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 21,
+                          "width": 794,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "desktop/ridge##detail-ridge>:nth-child(1)/text-1@0",
+                              "name": "Cedar ridge",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 2,
+                              "width": 100.03125,
+                              "height": 20,
+                              "text": "Cedar ridge",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 18,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/ridge##detail-ridge>:nth-child(2)",
+                          "name": "p",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 53,
+                          "width": 794,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "desktop/ridge##detail-ridge>:nth-child(2)/text-1@0",
+                              "name": "Check the marker at the eastern fork.",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 3,
+                              "width": 264.125,
+                              "height": 17,
+                              "text": "Check the marker at the eastern fork.",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Regular",
+                                "fontSize": 16,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/ridge##return",
+                          "name": "Action",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 93,
+                          "width": 139.40625,
+                          "height": 40,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Action",
+                          "children": [
+                            {
+                              "id": "desktop/ridge##return/text-1@0",
+                              "name": "Back to surveys",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 12,
+                              "width": 107.40625,
+                              "height": 16,
+                              "text": "Back to surveys",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "desktop/quarry",
+      "state": "quarry",
+      "viewport": "desktop",
+      "width": 1024,
+      "height": 720,
+      "children": [
+        {
+          "id": "desktop/quarry#:root",
+          "name": "html",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 1024,
+          "height": 720,
+          "style": {
+            "fill": "#FAF9F5",
+            "clip": true
+          },
+          "children": [
+            {
+              "id": "desktop/quarry#:root>:nth-child(2)",
+              "name": "body",
+              "kind": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 1024,
+              "height": 338,
+              "style": {},
+              "children": [
+                {
+                  "id": "desktop/quarry#:root>:nth-child(2)>:nth-child(1)",
+                  "name": "Masthead",
+                  "kind": "frame",
+                  "x": 0,
+                  "y": 0,
+                  "width": 1024,
+                  "height": 56,
+                  "style": {
+                    "fill": "#185C51"
+                  },
+                  "component": "Masthead",
+                  "children": [
+                    {
+                      "id": "desktop/quarry#:root>:nth-child(2)>:nth-child(1)/text-1@0",
+                      "name": "Field notes",
+                      "kind": "text",
+                      "x": 32,
+                      "y": 19,
+                      "width": 84.453125,
+                      "height": 17,
+                      "text": "Field notes",
+                      "style": {
+                        "fontFamily": "Arial",
+                        "fontStyle": "Bold",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "color": "#FFFFFF",
+                        "align": "LEFT"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "desktop/quarry##app",
+                  "name": "app",
+                  "kind": "frame",
+                  "x": 62,
+                  "y": 56,
+                  "width": 900,
+                  "height": 282,
+                  "style": {},
+                  "children": [
+                    {
+                      "id": "desktop/quarry##app>:nth-child(1)",
+                      "name": "h1",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 32,
+                      "width": 836,
+                      "height": 40,
+                      "style": {},
+                      "children": [
+                        {
+                          "id": "desktop/quarry##app>:nth-child(1)/text-1@0",
+                          "name": "Survey detail",
+                          "kind": "text",
+                          "x": 0,
+                          "y": 2,
+                          "width": 199.203125,
+                          "height": 36,
+                          "text": "Survey detail",
+                          "style": {
+                            "fontFamily": "Arial",
+                            "fontStyle": "Bold",
+                            "fontSize": 32,
+                            "lineHeight": 40,
+                            "color": "#202B2B",
+                            "align": "LEFT"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "desktop/quarry##detail-quarry",
+                      "name": "detail-quarry",
+                      "kind": "frame",
+                      "x": 32,
+                      "y": 96,
+                      "width": 836,
+                      "height": 154,
+                      "style": {
+                        "fill": "#FFFFFF",
+                        "stroke": "#C7D2CC",
+                        "strokeWidth": 1,
+                        "radius": 12
+                      },
+                      "children": [
+                        {
+                          "id": "desktop/quarry##detail-quarry>:nth-child(1)",
+                          "name": "h2",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 21,
+                          "width": 794,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "desktop/quarry##detail-quarry>:nth-child(1)/text-1@0",
+                              "name": "Old quarry",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 2,
+                              "width": 91.03125,
+                              "height": 20,
+                              "text": "Old quarry",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 18,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/quarry##detail-quarry>:nth-child(2)",
+                          "name": "p",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 53,
+                          "width": 794,
+                          "height": 24,
+                          "style": {},
+                          "children": [
+                            {
+                              "id": "desktop/quarry##detail-quarry>:nth-child(2)/text-1@0",
+                              "name": "The samples are catalogued and ready for review.",
+                              "kind": "text",
+                              "x": 0,
+                              "y": 3,
+                              "width": 354.875,
+                              "height": 17,
+                              "text": "The samples are catalogued and ready for review.",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Regular",
+                                "fontSize": 16,
+                                "lineHeight": 24,
+                                "color": "#202B2B",
+                                "align": "LEFT"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "desktop/quarry##return",
+                          "name": "Action",
+                          "kind": "frame",
+                          "x": 21,
+                          "y": 93,
+                          "width": 139.40625,
+                          "height": 40,
+                          "style": {
+                            "fill": "#185C51",
+                            "radius": 8
+                          },
+                          "component": "Action",
+                          "children": [
+                            {
+                              "id": "desktop/quarry##return/text-1@0",
+                              "name": "Back to surveys",
+                              "kind": "text",
+                              "x": 16,
+                              "y": 12,
+                              "width": 107.40625,
+                              "height": 16,
+                              "text": "Back to surveys",
+                              "style": {
+                                "fontFamily": "Arial",
+                                "fontStyle": "Bold",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                                "color": "#FFFFFF",
+                                "align": "CENTER"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "phone/open",
+      "to": "phone/closed",
+      "source": "phone/open##tab-closed",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "phone/closed",
+      "to": "phone/open",
+      "source": "phone/closed##tab-open",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "phone/open",
+      "to": "phone/river",
+      "source": "phone/open##open-river",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "phone/open",
+      "to": "phone/ridge",
+      "source": "phone/open##open-ridge",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "phone/closed",
+      "to": "phone/quarry",
+      "source": "phone/closed##open-quarry",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "phone/river",
+      "to": "phone/open",
+      "source": "phone/river##return",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "phone/ridge",
+      "to": "phone/open",
+      "source": "phone/ridge##return",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "phone/quarry",
+      "to": "phone/closed",
+      "source": "phone/quarry##return",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "desktop/open",
+      "to": "desktop/closed",
+      "source": "desktop/open##tab-closed",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "desktop/closed",
+      "to": "desktop/open",
+      "source": "desktop/closed##tab-open",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "desktop/open",
+      "to": "desktop/river",
+      "source": "desktop/open##open-river",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "desktop/open",
+      "to": "desktop/ridge",
+      "source": "desktop/open##open-ridge",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "desktop/closed",
+      "to": "desktop/quarry",
+      "source": "desktop/closed##open-quarry",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "desktop/river",
+      "to": "desktop/open",
+      "source": "desktop/river##return",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "desktop/ridge",
+      "to": "desktop/open",
+      "source": "desktop/ridge##return",
+      "action": "NAVIGATE"
+    },
+    {
+      "from": "desktop/quarry",
+      "to": "desktop/closed",
+      "source": "desktop/quarry##return",
+      "action": "NAVIGATE"
+    }
+  ],
+  "tokens": {
+    "ink": "#202B2B",
+    "paper": "#FAF9F5",
+    "surface": "#FFFFFF",
+    "accent": "#185C51",
+    "subtle": "#E3ECE6",
+    "line": "#C7D2CC"
+  },
+  "warnings": []
+}

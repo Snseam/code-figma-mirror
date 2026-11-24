@@ -1,0 +1,32 @@
+{
+  "project": "Field notes",
+  "viewports": [
+    { "id": "phone", "width": 375, "height": 700 },
+    { "id": "desktop", "width": 1024, "height": 720 }
+  ],
+  "states": [
+    { "id": "open", "url": "./index.html#open", "ready": "#list-open" },
+    { "id": "closed", "url": "./index.html#closed", "ready": "#list-closed" },
+    { "id": "river", "url": "./index.html#river", "ready": "#detail-river" },
+    { "id": "ridge", "url": "./index.html#ridge", "ready": "#detail-ridge" },
+    { "id": "quarry", "url": "./index.html#quarry", "ready": "#detail-quarry" }
+  ],
+  "edges": [
+    { "from": "open", "to": "closed", "selector": "#tab-closed" },
+    { "from": "closed", "to": "open", "selector": "#tab-open" },
+    { "from": "open", "to": "river", "selector": "#open-river" },
+    { "from": "open", "to": "ridge", "selector": "#open-ridge" },
+    { "from": "closed", "to": "quarry", "selector": "#open-quarry" },
+    { "from": "river", "to": "open", "selector": "#return" },
+    { "from": "ridge", "to": "open", "selector": "#return" },
+    { "from": "quarry", "to": "closed", "selector": "#return" }
+  ],
+  "tokens": {
+    "ink": "--ink",
+    "paper": "--paper",
+    "surface": "--surface",
+    "accent": "--accent",
+    "subtle": "--subtle",
+    "line": "--line"
+  }
+}

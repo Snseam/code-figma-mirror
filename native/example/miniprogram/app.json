@@ -1,0 +1,4 @@
+{
+  "pages": ["pages/sample/index"],
+  "window": { "navigationBarTitleText": "观察卡" }
+}

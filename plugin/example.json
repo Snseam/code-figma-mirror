@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "project": "parity-smoke",
+  "tokens": { "Accent": "#2459D6", "Ink": "#FFFFFF" },
+  "warnings": [],
+  "boards": [
+    {
+      "id": "mobile/home", "viewport": "mobile", "state": "home", "width": 320, "height": 180,
+      "children": [
+        {
+          "id": "open", "name": "打开", "kind": "frame", "component": "Button", "variant": "Primary",
+          "x": 16, "y": 16, "width": 128, "height": 40,
+          "style": { "fill": "#2459D6", "stroke": "#16224080", "strokeWidth": 1, "radius": 8 },
+          "children": [
+            { "id": "label", "name": "Label", "kind": "text", "x": 12, "y": 8, "width": 103, "height": 24,
+              "text": "打开详情", "style": { "color": "#FFFFFF", "fontSize": 15, "lineHeight": 24 } }
+          ]
+        },
+        {
+          "id": "help", "name": "帮助", "kind": "frame", "component": "Button", "variant": "Secondary",
+          "x": 16, "y": 76, "width": 128, "height": 40, "style": { "fill": "#16224020", "radius": 8 },
+          "children": [
+            { "id": "help-label", "name": "Label", "kind": "text", "x": 12, "y": 8, "width": 103, "height": 24,
+              "text": "浮层预览", "style": { "color": "#162240", "fontSize": 15, "lineHeight": 24 } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mobile/detail", "viewport": "mobile", "state": "detail", "width": 320, "height": 180,
+      "children": [
+        {
+          "id": "back", "name": "返回", "kind": "frame", "component": "Button", "variant": "Primary",
+          "x": 16, "y": 16, "width": 184, "height": 40,
+          "style": { "fill": "#2459D6", "stroke": "#16224080", "strokeWidth": 1, "radius": 8 },
+          "children": [
+            { "id": "label", "name": "Label", "kind": "text", "x": 12, "y": 8, "width": 156, "height": 24,
+              "text": "返回首页", "style": { "color": "#FFFFFF", "fontSize": 15, "lineHeight": 24 } }
+          ]
+        }
+      ]
+    }
+  ],
+  "edges": [
+    { "from": "mobile/home", "to": "mobile/detail", "source": "open", "action": "NAVIGATE" },
+    { "from": "mobile/home", "to": "mobile/detail", "source": "help", "action": "OVERLAY" },
+    { "from": "mobile/detail", "to": "mobile/home", "source": "back", "action": "BACK" }
+  ]
+}

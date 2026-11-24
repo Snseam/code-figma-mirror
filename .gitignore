@@ -1,0 +1,10 @@
+node_modules/
+build/
+native/output/
+playwright-report/
+test-results/
+*.log
+*.local.json
+.DS_Store
+.env
+.env.*

@@ -1,0 +1,6 @@
+{
+  "appid": "touristappid",
+  "projectname": "code-figma-mirror-native-example",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "miniprogram/"
+}

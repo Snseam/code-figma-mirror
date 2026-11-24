@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI Parity 本地同步</title>
+<style>
+  :root { color-scheme: light dark; font: 13px/1.5 Inter, system-ui, sans-serif; }
+  body { margin: 20px; color: var(--figma-color-text, CanvasText); background: var(--figma-color-bg, Canvas); }
+  label, h2 { display: block; margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+  p { margin: 6px 0 12px; }
+  form, section { margin-bottom: 20px; }
+  input, button { font: inherit; max-width: 100%; }
+  input { display: block; margin-bottom: 12px; }
+  button { padding: 6px 12px; }
+  #status, #warnings, a { white-space: pre-wrap; overflow-wrap: anywhere; }
+  #warnings:empty { display: none; }
+  #warnings { padding-inline-start: 20px; }
+  #files a { display: block; padding-block: 3px; color: var(--figma-color-text-brand, LinkText); }
+</style>
+<form id="import-form">
+  <label for="file">项目 JSON 文件</label>
+  <input type="file" id="file" name="project" accept=".json,application/json" required aria-describedby="policy">
+  <p id="policy">同一文件打开已有版本。仅绑定颜色变化且页面仍与基线一致时原位更新，其余变化创建新版本页。</p>
+  <button type="submit">导入项目</button>
+</form>
+<section>
+  <h2>导出当前版本页</h2>
+  <p>生成每个画板的 PNG 和设计差异 JSON，可整包下载或单独保存。</p>
+  <button type="button" id="export">导出并下载 ZIP</button>
+</section>
+<p role="status" id="status"></p>
+<ul id="warnings"></ul>
+<div id="files"></div>
+<script id="file-tools">
+  "use strict";
+  function sha256(bytes) {
+    const constants = [
+      0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+      0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+      0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+      0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+      0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+      0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+      0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+      0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+    ];
+    const state = new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+    const padded = new Uint8Array(Math.ceil((bytes.length + 9) / 64) * 64);
+    padded.set(bytes);
+    padded[bytes.length] = 128;
+    const view = new DataView(padded.buffer);
+    view.setUint32(padded.length - 8, Math.floor(bytes.length / 0x20000000));
+    view.setUint32(padded.length - 4, bytes.length * 8);
+    const words = new Uint32Array(64);
+    const rotate = (word, bits) => (word >>> bits) | (word << (32 - bits));
+    for (let offset = 0; offset < padded.length; offset += 64) {
+      for (let index = 0; index < 16; index++) words[index] = view.getUint32(offset + index * 4);
+      for (let index = 16; index < 64; index++) {
+        const early = words[index - 15], late = words[index - 2];
+        words[index] = words[index - 16] + (rotate(early, 7) ^ rotate(early, 18) ^ (early >>> 3))
+          + words[index - 7] + (rotate(late, 17) ^ rotate(late, 19) ^ (late >>> 10));
+      }
+      let [first, second, third, fourth, fifth, sixth, seventh, eighth] = state;
+      for (let index = 0; index < 64; index++) {
+        const choice = (fifth & sixth) ^ (~fifth & seventh);
+        const majority = (first & second) ^ (first & third) ^ (second & third);
+        const upper = eighth + (rotate(fifth, 6) ^ rotate(fifth, 11) ^ rotate(fifth, 25)) + choice + constants[index] + words[index];
+        const lower = (rotate(first, 2) ^ rotate(first, 13) ^ rotate(first, 22)) + majority;
+        eighth = seventh; seventh = sixth; sixth = fifth; fifth = (fourth + upper) >>> 0;
+        fourth = third; third = second; second = first; first = (upper + lower) >>> 0;
+      }
+      [first, second, third, fourth, fifth, sixth, seventh, eighth].forEach((value, index) => { state[index] += value; });
+    }
+    return Array.from(state, word => word.toString(16).padStart(8, "0")).join("");
+  }
+
+  function zipStore(files) {
+    const encoder = new TextEncoder();
+    const local = [], directory = [];
+    let offset = 0, directorySize = 0;
+    const table = Uint32Array.from({ length: 256 }, (_, index) => {
+      let crc = index;
+      for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+      return crc;
+    });
+    function header(size, signature) {
+      const view = new DataView(new ArrayBuffer(size));
+      view.setUint32(0, signature, true);
+      return view;
+    }
+    function entry(central, name, bytes, crc) {
+      const view = header(central ? 46 : 30, central ? 0x02014b50 : 0x04034b50);
+      let start = 4;
+      if (central) { view.setUint16(start, 20, true); start += 2; }
+      view.setUint16(start, 20, true);
+      view.setUint16(start + 2, 0x0800, true);
+      view.setUint16(start + 8, 0x21, true);
+      view.setUint32(start + 10, crc, true);
+      view.setUint32(start + 14, bytes.length, true);
+      view.setUint32(start + 18, bytes.length, true);
+      view.setUint16(start + 22, name.length, true);
+      if (central) view.setUint32(42, offset, true);
+      return view.buffer;
+    }
+    if (files.length >= 65535) throw new Error("超过 ZIP 文件数量限制，可单独下载");
+    for (const file of files) {
+      const bytes = typeof file.content === "string" ? encoder.encode(file.content) : file.content instanceof Uint8Array ? file.content : new Uint8Array(file.content);
+      const name = encoder.encode(file.name);
+      if (name.length > 65535 || offset + bytes.length + name.length + 30 >= 0xffffffff) throw new Error("超过 ZIP 大小限制，可单独下载");
+      let crc = 0xffffffff;
+      for (let index = 0; index < bytes.length; index++) crc = (crc >>> 8) ^ table[(crc ^ bytes[index]) & 255];
+      crc = ~crc;
+      local.push(entry(false, name, bytes, crc), name, bytes);
+      directory.push(entry(true, name, bytes, crc), name);
+      offset += 30 + name.length + bytes.length;
+      directorySize += 46 + name.length;
+    }
+    if (offset + directorySize + 22 >= 0xffffffff) throw new Error("超过 ZIP 大小限制，可单独下载");
+    const end = header(22, 0x06054b50);
+    end.setUint16(8, files.length, true);
+    end.setUint16(10, files.length, true);
+    end.setUint32(12, directorySize, true);
+    end.setUint32(16, offset, true);
+    return new Blob(local.concat(directory, [end.buffer]), { type: "application/zip" });
+  }
+</script>
+<script>
+  "use strict";
+  const form = document.querySelector("form");
+  const picker = document.querySelector("#file");
+  const exportButton = document.querySelector("#export");
+  const statusText = document.querySelector("#status");
+  const warnings = document.querySelector("#warnings");
+  const files = document.querySelector("#files");
+  const urls = [];
+  const pending = [];
+  function busy(value) {
+    for (const control of [picker, form.querySelector("button"), exportButton]) control.disabled = value;
+  }
+  function begin(message) {
+    busy(true);
+    pending.length = 0;
+    files.replaceChildren();
+    warnings.replaceChildren();
+    while (urls.length) URL.revokeObjectURL(urls.pop());
+    statusText.textContent = message;
+  }
+  function finishError(error) {
+    pending.length = 0;
+    statusText.textContent = String(error);
+    busy(false);
+  }
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    const file = picker.files[0];
+    if (!file) return;
+    begin("正在导入…");
+    try {
+      const bytes = await file.arrayBuffer();
+      const hex = sha256(new Uint8Array(bytes));
+      parent.postMessage({ pluginMessage: { type: "import", text: new TextDecoder("utf-8", { fatal: true }).decode(bytes), digest: hex } }, "*");
+    } catch (error) { finishError(error.message); }
+  });
+  exportButton.addEventListener("click", () => {
+    begin("正在导出当前画板…");
+    parent.postMessage({ pluginMessage: { type: "export" } }, "*");
+  });
+  function downloadLink(name, label, blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.textContent = label;
+    urls.push(url);
+    files.appendChild(link);
+    return link;
+  }
+  window.addEventListener("message", event => {
+    if (event.source !== parent) return;
+    const message = event.data && event.data.pluginMessage;
+    if (!message) return;
+    if (message.type === "file") {
+      pending.push(message);
+    } else if (message.type === "error") {
+      finishError(message.text);
+    } else if (message.type === "done") {
+      let zipWarning = "";
+      if (pending.length) {
+        try { downloadLink("ui-parity-export.zip", "下载整套 ZIP", zipStore(pending)).click(); }
+        catch (error) { zipWarning = "\n" + error.message; }
+      }
+      for (const file of pending) {
+        const part = file.mime === "image/png" && !(file.content instanceof Uint8Array) ? new Uint8Array(file.content) : file.content;
+        downloadLink(file.name, file.name, new Blob([part], { type: file.mime }));
+      }
+      pending.length = 0;
+      for (const warning of message.warnings || []) {
+        const item = document.createElement("li");
+        item.textContent = warning;
+        warnings.appendChild(item);
+      }
+      statusText.textContent = message.text + zipWarning;
+      busy(false);
+    }
+  });
+</script>
+</html>

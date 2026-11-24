@@ -1,0 +1,7 @@
+{
+  "name": "arimo-antialiased-v1",
+  "fontFamily": "Arimo",
+  "sha256": "e43898b143ec826ac8cb4034816458a7047fbe0836558de2a1f8c6223ae3e0ca",
+  "smoothing": "antialiased",
+  "fontFile": "../../build/raster-acceptance/fonts/arimo.ttf"
+}

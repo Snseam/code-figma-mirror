@@ -1,0 +1,40 @@
+{
+  "name": "code-figma-mirror",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deterministic code-to-Figma and Figma-to-code mirror, sync, and UI parity engine for Web and Mini-Program runtimes.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Snseam/code-figma-mirror.git"
+  },
+  "homepage": "https://github.com/Snseam/code-figma-mirror#readme",
+  "bugs": {
+    "url": "https://github.com/Snseam/code-figma-mirror/issues"
+  },
+  "keywords": [
+    "figma",
+    "code-to-figma",
+    "figma-to-code",
+    "ui-parity",
+    "design-tokens",
+    "figma-plugin",
+    "figma-mcp",
+    "mcp",
+    "visual-regression",
+    "playwright",
+    "wechat-miniprogram"
+  ],
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "demo": "node cli.mjs capture examples/inbox/scenarios.json build/inbox",
+    "test": "node --test tests/*.test.mjs plugin/*.test.cjs native/*.test.mjs mcp/*.test.mjs tools/*.test.mjs",
+    "test:integrations": "npm --prefix integrations test"
+  },
+  "dependencies": {
+    "playwright": "1.61.1",
+    "pngjs": "7.0.0",
+    "postcss": "8.5.33"
+  }
+}

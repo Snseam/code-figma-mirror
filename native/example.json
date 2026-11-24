@@ -1,0 +1,36 @@
+{
+  "project": "观察卡",
+  "viewports": [{ "id": "phone", "wsEndpoint": "ws://127.0.0.1:9420" }],
+  "states": [
+    {
+      "id": "closed", "path": "/pages/sample/index", "ready": "#collapsed",
+      "data": { "title": "白桦叶", "expanded": false },
+      "selectors": [
+        { "id": "card", "kind": "frame", "selector": "#card", "children": [
+          { "id": "title", "kind": "text", "selector": "#title" },
+          { "id": "toggle", "kind": "frame", "component": "展开按钮", "selector": "#toggle", "children": [
+            { "id": "label", "kind": "text", "selector": "#collapsed" }
+          ] }
+        ] }
+      ]
+    },
+    {
+      "id": "open", "path": "/pages/sample/index", "ready": "#expanded",
+      "data": { "title": "白桦叶", "expanded": false },
+      "steps": [{ "action": "tap", "selector": "#toggle" }],
+      "selectors": [
+        { "id": "card", "kind": "frame", "selector": "#card", "children": [
+          { "id": "title", "kind": "text", "selector": "#title" },
+          { "id": "toggle", "kind": "frame", "component": "展开按钮", "selector": "#toggle", "children": [
+            { "id": "label", "kind": "text", "selector": "#expanded" }
+          ] },
+          { "id": "detail", "kind": "text", "selector": "#detail" }
+        ] }
+      ]
+    }
+  ],
+  "edges": [
+    { "from": "closed", "to": "open", "source": "toggle" },
+    { "from": "open", "to": "closed", "source": "toggle" }
+  ]
+}
