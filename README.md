@@ -68,6 +68,8 @@ node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out
 
 ## Verified benchmark & boundaries
 
+**Public UI cases.** We tested the shadcn/ui dialog, Plane mobile sign-in, and the Cal.com booking flow. All four declared prototype edges replayed in Chromium and matched their Figma destinations. All nine boards exceeded the 1% visual gate. The gallery includes full-resolution source images, Figma renders, heatmaps, and an offline replay. [Browse the public UI results](examples/public-ui/README.md)
+
 The table compares the **same 10 Figma PNGs** against two Chromium captures of the example on macOS (`--pixel-tolerance 16 --max-diff-ratio 0.01`; see [examples/inbox/raster-capture.md](examples/inbox/raster-capture.md)):
 
 | Browser reference | Desktop · 1024 × 720 | Phone · 375 × 700 |

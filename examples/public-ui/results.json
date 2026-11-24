@@ -1,0 +1,151 @@
+{
+  "date": "2026-11-24",
+  "pixelTolerance": 16,
+  "maxDiffRatio": 0.01,
+  "sourceRevision": "fd9d1bb",
+  "boards": [
+    {
+      "project": "shadcn-ui-components",
+      "board": "desktop/buttons",
+      "width": 1024,
+      "height": 720,
+      "markedComponents": 8,
+      "figmaInstances": 1,
+      "diffPixels": 7429,
+      "totalPixels": 737280,
+      "diffPercent": 1.0076,
+      "edges": [],
+      "evidence": "evidence/shadcn-buttons.png",
+      "sourcePixelSHA256": "e6fa6761e8b63aa3f3a48c1fb7a3d66586cb40d61d039f7262f4839f6b0b8d9f",
+      "figmaPixelSHA256": "507c3766d94e7845b9a0b98322a9fce479a04dc5900a22b1f08b7d56c6bc2f9a"
+    },
+    {
+      "project": "shadcn-ui-components",
+      "board": "desktop/dialog",
+      "width": 1024,
+      "height": 720,
+      "markedComponents": 14,
+      "figmaInstances": 0,
+      "diffPixels": 25378,
+      "totalPixels": 737280,
+      "diffPercent": 3.4421,
+      "edges": [],
+      "evidence": "evidence/shadcn-dialog.png",
+      "sourcePixelSHA256": "bc98b9f7cc84c084ec55ec27197cd8e7363a88246b7916e82932886397727547",
+      "figmaPixelSHA256": "f3673e8a01cb56cb46e4fdf306d15acb84cc8dd26c234101a10692fd01a955b9"
+    },
+    {
+      "project": "shadcn-public-dialog",
+      "board": "desktop/closed",
+      "width": 1280,
+      "height": 900,
+      "markedComponents": 1,
+      "figmaInstances": 1,
+      "diffPixels": 53704,
+      "totalPixels": 1152000,
+      "diffPercent": 4.6618,
+      "edges": [
+        "desktop/open"
+      ],
+      "evidence": "evidence/shadcn-live-closed.png",
+      "sourcePixelSHA256": "4ac8cfcc31b7016e05cf056b43411b1b1139d0f80d0cc93735f620f6cf2ab24d",
+      "figmaPixelSHA256": "8dda917d692b4b6283dd7b4543a41d598f871c468270e52fbfeb106796f466e2"
+    },
+    {
+      "project": "shadcn-public-dialog",
+      "board": "desktop/open",
+      "width": 1280,
+      "height": 900,
+      "markedComponents": 2,
+      "figmaInstances": 1,
+      "diffPixels": 137604,
+      "totalPixels": 1152000,
+      "diffPercent": 11.9448,
+      "edges": [
+        "desktop/closed"
+      ],
+      "evidence": "evidence/shadcn-live-open.png",
+      "sourcePixelSHA256": "73155643f76acbd21f9805d4324854b9cf1d01e23d15fa52d07c50671164a12a",
+      "figmaPixelSHA256": "3956e25fdb6de4c4418295b99cefd505393c2afd0bfaa458a1f515b923d812cc"
+    },
+    {
+      "project": "plane-public-login",
+      "board": "phone/welcome",
+      "width": 390,
+      "height": 844,
+      "markedComponents": 1,
+      "figmaInstances": 1,
+      "diffPixels": 15051,
+      "totalPixels": 329160,
+      "diffPercent": 4.5725,
+      "edges": [],
+      "evidence": "evidence/plane-welcome.png",
+      "sourcePixelSHA256": "8f69094aab66857e29adb4159428a32a000458fc074ff5566a3dbe5e523c9c7b",
+      "figmaPixelSHA256": "62c46ba482e50f0a0918f9b3cb981726b43294fc68f89f16abff601619b784cd"
+    },
+    {
+      "project": "plane-public-login",
+      "board": "phone/email-entered",
+      "width": 390,
+      "height": 844,
+      "markedComponents": 1,
+      "figmaInstances": 0,
+      "diffPixels": 16000,
+      "totalPixels": 329160,
+      "diffPercent": 4.8609,
+      "edges": [],
+      "evidence": "evidence/plane-email-entered.png",
+      "sourcePixelSHA256": "1437bd901ad4e32d15949419baecc3d5b1d6bfd207ab733be5878762f6c8988c",
+      "figmaPixelSHA256": "b0dcf3651a510c1c7b463de9dae94ddf61e3eec3af201e9dab4858c41bcc0f17"
+    },
+    {
+      "project": "cal-public-booking",
+      "board": "desktop/calendar",
+      "width": 1280,
+      "height": 900,
+      "markedComponents": 37,
+      "figmaInstances": 18,
+      "diffPixels": 16176,
+      "totalPixels": 1152000,
+      "diffPercent": 1.4042,
+      "edges": [
+        "desktop/times"
+      ],
+      "evidence": "evidence/cal-calendar.png",
+      "sourcePixelSHA256": "e51443c54d114ed2859bcf01d3c6b9723873ce4fd6eeb719df640205223f8495",
+      "figmaPixelSHA256": "439c521c4ccd4055fddc545afc046c1517aa967625926419c36dbe660fcb589e"
+    },
+    {
+      "project": "cal-public-booking",
+      "board": "desktop/times",
+      "width": 1280,
+      "height": 900,
+      "markedComponents": 45,
+      "figmaInstances": 25,
+      "diffPixels": 27716,
+      "totalPixels": 1152000,
+      "diffPercent": 2.4059,
+      "edges": [
+        "desktop/details"
+      ],
+      "evidence": "evidence/cal-times.png",
+      "sourcePixelSHA256": "1e974a7dbb5d139acb8e7665692ff35ae2975ccebbea9d02341c1893d56b154a",
+      "figmaPixelSHA256": "4386da5eccc7a0828ab3b6e4e2fce0b7ee4edcb4f0a3cf5f0e48666847ba9848"
+    },
+    {
+      "project": "cal-public-booking",
+      "board": "desktop/details",
+      "width": 1280,
+      "height": 900,
+      "markedComponents": 0,
+      "figmaInstances": 0,
+      "diffPixels": 17791,
+      "totalPixels": 1152000,
+      "diffPercent": 1.5444,
+      "edges": [],
+      "evidence": "evidence/cal-details.png",
+      "sourcePixelSHA256": "bbf5ec88c5d6abb40f15e23851fd519843176214da3bd74aa982128a95b5c63d",
+      "figmaPixelSHA256": "ec568f23433e56136a0ed6a4dd81c221db8bfb9e435c25d05517a93aaef953ec"
+    }
+  ]
+}
