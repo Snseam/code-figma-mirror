@@ -36,6 +36,7 @@ function colorKey(hex) {
 
 function validate(input) {
   requireValue(input && input.version === 1 && isName(input.project), "需要 version: 1 和 project 项目名");
+  requireValue(input.fontMode === undefined || ["original", "controlled"].includes(input.fontMode), "未知字体方案");
   requireValue(Array.isArray(input.boards) && input.boards.length, "boards 至少需要一个画板");
   requireValue(Array.isArray(input.edges) && Array.isArray(input.warnings), "edges、warnings 需要是数组");
   requireValue(input.tokens && typeof input.tokens === "object" && !Array.isArray(input.tokens), "tokens 需要是颜色字典");
@@ -187,6 +188,7 @@ function componentOccurrences(boards) {
 
 function createRenderer(api, page, input, warnings, variables, occurrences) {
   const fonts = new Map();
+  let availableFonts;
   const componentRefs = new Map();
   const groups = new Map();
   const refs = new Map();
@@ -213,6 +215,18 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
     return fonts.get(key);
   }
   async function resolveFont(requested, id) {
+    if (input.fontMode) {
+      try { await load(requested); }
+      catch {
+        if (!availableFonts) availableFonts = api.listAvailableFontsAsync ? api.listAvailableFontsAsync() : [];
+        const normalize = style => style.replace(/[\s-]/g, "").toLowerCase();
+        const alias = (await availableFonts).find(({ fontName }) => fontName.family === requested.family && normalize(fontName.style) === normalize(requested.style));
+        if (!alias) throw new Error(`${id}: 需要字体 ${requested.family} ${requested.style}，请在 Figma 中启用后重新导入`);
+        await load(alias.fontName);
+        return alias.fontName;
+      }
+      return requested;
+    }
     const candidates = [requested];
     if (requested.family.toLowerCase() === "arial") candidates.push({ family: "Arimo", style: requested.style });
     candidates.push({ family: "Inter", style: requested.style }, { family: "Inter", style: "Regular" });
@@ -626,6 +640,12 @@ async function capture(api, page, refs, tokenGroup, trackSpacing, observed) {
       const { x, y, width, height, type } = value;
       const geometry = { boardId: activeBoard, id: known.id, x, y, width, height, type };
       if (type === "TEXT") geometry.text = value.text;
+      if (observed.fonts && known.kind === "text") {
+        const text = type === "TEXT" ? node : type === "INSTANCE" && node.findOne(child => child.type === "TEXT");
+        const face = text && text.fontName;
+        observed.fonts.push({ boardId: activeBoard, id: known.id, family: face && face.family || null,
+          style: face && face.style || null, missing: !text || text.hasMissingFont === true });
+      }
       if (known.scope === "node" && parent && parent.scope !== "design") geometry.parentId = parent.id;
       observed.geometry.push(geometry);
       if (type === "INSTANCE") observed.instances.push({ boardId: activeBoard, id: known.id, mainId: main ? main.id : null });
@@ -850,6 +870,7 @@ async function importProject(api, input, digest) {
     }));
     const rows = await capture(api, page, renderer.refs, tokenGroup, true);
     const data = { version: 1, revision, digest, project, boards, refs: Array.from(renderer.refs), rows, tokenGroup, trackSpacing: true, warnings: Array.from(warnings) };
+    if (input.fontMode) data.fontMode = input.fontMode;
     if (contract) {
       const proof = await designProof(api, page, tokenGroup);
       if (proof) data.incremental = { shape: contract.shape, tokens: input.tokens, proof };
@@ -876,6 +897,7 @@ async function exportProject(api, sendFile) {
   const data = readBaseline(page);
   const refs = loadRefs(data);
   const observed = { edges: [], instances: [], geometry: [] };
+  if (data.fontMode) observed.fonts = [];
   const current = await capture(api, page, refs, data.tokenGroup, data.trackSpacing, observed);
   const changes = diffRows(data.rows, current);
   const present = new Set(current.filter(row => row.scope === "board").map(row => row.figmaId));

@@ -630,6 +630,28 @@ test("font fallback tries matching style before Inter Regular and records the ac
   }
 });
 
+test("font modes require the selected face and export the actual layer font", async () => {
+  for (const mode of ["original", "controlled"]) {
+    const { api } = testApi();
+    const input = structuredClone(fixture);
+    input.fontMode = mode;
+    const board = input.boards[0];
+    const text = board.children[0].children[0];
+    Object.assign(text.style, { fontFamily: "Test Font", fontStyle: "Bold" });
+    board.children = [text];
+    input.boards = [board];
+    input.edges = [];
+    api.loadFontAsync = async font => { if (font.family === "Test Font") throw Error("missing"); };
+    const previous = api.currentPage;
+    await assert.rejects(importProject(api, input, "test-font"), /Test Font Bold/);
+    assert.equal(api.currentPage, previous);
+    api.loadFontAsync = async () => {};
+    await importProject(api, input, "test-font");
+    const report = await exportProject(api, () => {});
+    assert.deepEqual(report.observed.fonts, [{ boardId: board.id, id: text.id, family: "Test Font", style: "Bold", missing: false }]);
+  }
+});
+
 test("unpublished components on another page resolve by node ID, with explicit and default variants", async () => {
   const { api } = testApi();
   const sourcePage = api.currentPage;

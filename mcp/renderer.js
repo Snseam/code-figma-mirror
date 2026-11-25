@@ -193,10 +193,12 @@ async function tokenIndex() {
   return result
 }
 
-function resolveFont(style, fonts) {
+function resolveFont(style, fonts, fontMode) {
   const family = style.fontFamily || 'Inter', weight = style.fontStyle || 'Regular'
-  for (const candidate of [family, ...(family.toLowerCase() === 'arial' ? ['Arimo'] : []), 'Inter']) {
-    const font = fonts.find(item => item.family.toLowerCase() === candidate.toLowerCase() && item.style === weight)
+  for (const candidate of fontMode ? [family] : [family, ...(family.toLowerCase() === 'arial' ? ['Arimo'] : []), 'Inter']) {
+    const normalize = value => value.replace(/[\s-]/g, '').toLowerCase()
+    const font = fonts.find(item => item.family.toLowerCase() === candidate.toLowerCase() &&
+      (fontMode ? normalize(item.style) === normalize(weight) : item.style === weight))
     if (font) return font
   }
   throw Error(`Missing font: ${family} ${weight}`)
@@ -311,7 +313,7 @@ async function painter() {
       box.clipsContent = !!style.clip
     }
     if (spec.kind === 'text') {
-      Object.assign(box, { fontName: resolveFont(style, fonts), fontSize: style.fontSize ?? 16,
+      Object.assign(box, { fontName: resolveFont(style, fonts, bundle.fontMode), fontSize: style.fontSize ?? 16,
         letterSpacing: { unit: 'PIXELS', value: style.letterSpacing ?? 0 },
         lineHeight: style.lineHeight == null ? { unit: 'AUTO' } : { unit: 'PIXELS', value: style.lineHeight },
         textAlignHorizontal: ({ START: 'LEFT', END: 'RIGHT', JUSTIFY: 'JUSTIFIED' })[style.align] || style.align || 'LEFT',
@@ -452,7 +454,8 @@ async function verify() {
             (style.lineHeight && style.lineHeight !== node.lineHeight.value) ||
             !matchesTracking(node, style.letterSpacing ?? 0) ||
             node.textAlignHorizontal !== (({ START: 'LEFT', END: 'RIGHT', JUSTIFY: 'JUSTIFIED' })[style.align] || style.align || 'LEFT') ||
-            (node.fontName.family !== resolveFont(style, fonts).family || node.fontName.style !== (style.fontStyle || 'Regular'))) fail('text')
+            (node.fontName.family !== resolveFont(style, fonts, bundle.fontMode).family ||
+             node.fontName.style !== resolveFont(style, fonts, bundle.fontMode).style)) fail('text')
         texts++
       }
       const edge = sources.get(JSON.stringify([board.id, spec.id]))

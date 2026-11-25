@@ -37,7 +37,7 @@ export function stateFingerprint(expected) {
   return expected ? signature === expected.signature : signature;
 }
 
-export function collectDOM({ boardId, components, tokenVariables, edgeSelectors, svgImages }) {
+export function collectDOM({ boardId, components, tokenVariables, edgeSelectors, svgImages, fontMode }) {
   const warnings = new Set();
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1;
@@ -107,8 +107,10 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
   }
   function textStyle(css) {
     const weight = Number(css.fontWeight);
-    const face = weight >= 700 ? 'Bold' : weight >= 600 ? 'Semi Bold' : weight >= 500 ? 'Medium'
+    const faces = ['Thin', 'Extra Light', 'Light', 'Regular', 'Medium', 'Semi Bold', 'Bold', 'Extra Bold', 'Black'];
+    const legacyFace = weight >= 700 ? 'Bold' : weight >= 600 ? 'Semi Bold' : weight >= 500 ? 'Medium'
       : weight <= 300 ? 'Light' : 'Regular';
+    const face = fontMode ? faces[Math.max(0, Math.min(8, Math.round(weight / 100) - 1))] : legacyFace;
     const italic = /italic|oblique/.test(css.fontStyle);
     const logicalStart = css.direction === 'rtl' ? 'right' : 'left';
     const physical = css.textAlign.replace(/^-webkit-/, '');
@@ -123,6 +125,7 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
     else warnings.add(`Unsupported computed letter-spacing: ${spacing}`);
     return {
       fontFamily: css.fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, ''),
+      ...(fontMode && { fontWeight: weight }),
       fontStyle: italic ? (face === 'Regular' ? 'Italic' : `${face} Italic`) : face,
       fontSize, ...(Number.isFinite(letterSpacing) ? { letterSpacing } : {}),
       ...(Number.isFinite(parseFloat(css.lineHeight)) ? { lineHeight: parseFloat(css.lineHeight) } : {}),

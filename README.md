@@ -43,6 +43,10 @@ node cli.mjs verify build/inbox build/figma build/visual
 
 ## Architecture
 
+### Font alignment
+
+Use `capture --font-mode original` to record the source fonts. Use `capture --font-mode controlled --raster-profile <profile.json>` to capture both the original and a shared-font experiment in a new run directory. In the desktop plugin, select that directory and choose the baseline to import. Both modes require the requested Figma family and style. Verification checks live text-layer fonts and the source bundle digest as well as pixels. Each mode gets its own report. See the [capture commands, Noto Sans SC preset, and evidence limits](examples/inbox/raster-capture.md#字体方案).
+
 | Path | Role |
 | --- | --- |
 | `cli.mjs`, `capture.mjs`, `capture-dom.mjs` | Playwright scenario runner, DOM/style/geometry/transition extractor |

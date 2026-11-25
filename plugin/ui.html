@@ -11,6 +11,9 @@
   form, section { margin-bottom: 20px; }
   input, button { font: inherit; max-width: 100%; }
   input { display: block; margin-bottom: 12px; }
+  fieldset { margin: 0 0 12px; }
+  fieldset input, fieldset label { display: inline; }
+  fieldset label { margin-inline-end: 12px; }
   button { padding: 6px 12px; }
   #status, #warnings, a { white-space: pre-wrap; overflow-wrap: anywhere; }
   #warnings:empty { display: none; }
@@ -20,6 +23,15 @@
 <form id="import-form">
   <label for="file">项目 JSON 文件</label>
   <input type="file" id="file" name="project" accept=".json,application/json" required aria-describedby="policy">
+  <div id="directory-import" hidden>
+    <label for="directory">或选择字体采集目录</label>
+    <input type="file" id="directory" name="directory" webkitdirectory>
+    <fieldset id="font-options" hidden>
+      <legend>导入的字体方案</legend>
+      <input type="radio" id="original" name="fontMode" value="original" checked><label for="original">严格对齐原字体</label>
+      <input type="radio" id="controlled" name="fontMode" value="controlled"><label for="controlled">统一字体实验</label>
+    </fieldset>
+  </div>
   <p id="policy">同一文件打开已有版本。仅绑定颜色变化且页面仍与基线一致时原位更新，其余变化创建新版本页。</p>
   <button type="submit">导入项目</button>
 </form>
@@ -128,6 +140,32 @@
   "use strict";
   const form = document.querySelector("form");
   const picker = document.querySelector("#file");
+  const directory = document.querySelector("#directory");
+  const fontOptions = document.querySelector("#font-options");
+  document.querySelector("#directory-import").hidden = !("webkitdirectory" in directory);
+  const modeFiles = new Map();
+  directory.addEventListener("change", () => {
+    modeFiles.clear();
+    for (const file of directory.files) {
+      const match = /^[^/]+\/(original|controlled)\/bundle\.json$/.exec(file.webkitRelativePath);
+      if (match) modeFiles.set(match[1], file);
+    }
+    picker.value = "";
+    picker.required = !directory.files.length;
+    directory.setCustomValidity(directory.files.length && !modeFiles.size ? "请选择包含 original/bundle.json 的采集目录。" : "");
+    fontOptions.hidden = !modeFiles.size;
+    for (const radio of fontOptions.querySelectorAll("input")) {
+      radio.disabled = !modeFiles.has(radio.value);
+      radio.checked = radio.value === (modeFiles.has("original") ? "original" : "controlled");
+    }
+  });
+  picker.addEventListener("change", () => {
+    directory.value = "";
+    directory.setCustomValidity("");
+    modeFiles.clear();
+    fontOptions.hidden = true;
+    picker.required = true;
+  });
   const exportButton = document.querySelector("#export");
   const statusText = document.querySelector("#status");
   const warnings = document.querySelector("#warnings");
@@ -135,7 +173,7 @@
   const urls = [];
   const pending = [];
   function busy(value) {
-    for (const control of [picker, form.querySelector("button"), exportButton]) control.disabled = value;
+    for (const control of [picker, directory, fontOptions, form.querySelector("button"), exportButton]) control.disabled = value;
   }
   function begin(message) {
     busy(true);
@@ -152,13 +190,16 @@
   }
   form.addEventListener("submit", async event => {
     event.preventDefault();
-    const file = picker.files[0];
+    const selectedMode = form.elements.fontMode.value;
+    const file = picker.files[0] || modeFiles.get(selectedMode);
     if (!file) return;
     begin("正在导入…");
     try {
       const bytes = await file.arrayBuffer();
       const hex = sha256(new Uint8Array(bytes));
-      parent.postMessage({ pluginMessage: { type: "import", text: new TextDecoder("utf-8", { fatal: true }).decode(bytes), digest: hex } }, "*");
+      const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      if (modeFiles.size && JSON.parse(text).fontMode !== selectedMode) throw Error("采集包中的字体方案与所选目录不一致。");
+      parent.postMessage({ pluginMessage: { type: "import", text, digest: hex } }, "*");
     } catch (error) { finishError(error.message); }
   });
   exportButton.addEventListener("click", () => {

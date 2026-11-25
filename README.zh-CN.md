@@ -17,6 +17,8 @@ Code Figma Mirror 是一个面向运行态前端应用的**确定性代码 ↔ F
 
 ## 快速开始
 
+采集时可以选择 **严格对齐原字体**（`--font-mode original`）或 **统一字体实验**（`--font-mode controlled`）。统一字体模式会同时保存原始参考。在 Figma 桌面插件选择采集目录后，可切换要导入的方案。两种方案分别核对实际字形来源、Figma 文字层回读和像素差异，并生成各自的报告。[运行命令与 Noto Sans SC 配置](examples/inbox/raster-capture.md#字体方案)
+
 需要 **Node.js >= 22**。克隆仓库后执行：
 
 ```sh

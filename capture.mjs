@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { collectDOM, cropViewport, stateFingerprint } from './capture-dom.mjs';
+import { captureFontRun } from './font-run.mjs';
 
 const actionTimeout = 8000;
 const matchTimeout = 3500;
@@ -56,23 +57,27 @@ function validate(config) {
 
 async function loadRasterProfile(profile) {
   if (profile === undefined) return;
-  if (!profile || typeof profile.name !== 'string' || !profile.name.trim() || profile.fontFamily !== 'Arimo' ||
-      profile.smoothing !== 'antialiased' || !/^[0-9a-f]{64}$/.test(profile.sha256) ||
+  if (!profile || typeof profile.name !== 'string' || !profile.name.trim() ||
+      typeof profile.fontFamily !== 'string' || !/^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u.test(profile.fontFamily) ||
+      profile.fontFamily !== profile.fontFamily.trim() ||
+      (profile.platformFamily !== undefined && (typeof profile.platformFamily !== 'string' || !profile.platformFamily.trim())) ||
+      !['preserve', 'antialiased'].includes(profile.smoothing) || !/^[0-9a-f]{64}$/.test(profile.sha256) ||
       typeof profile.fontFile !== 'string' || !profile.fontFile) {
-    throw TypeError('rasterProfile requires name, fontFamily Arimo, smoothing antialiased, SHA-256 and a local fontFile');
+    throw TypeError('rasterProfile requires name, fontFamily, smoothing preserve or antialiased, SHA-256 and a local fontFile');
   }
   const bytes = await readFile(profile.fontFile);
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   if (sha256 !== profile.sha256) throw Error(`Raster font SHA-256 mismatch: ${sha256}`);
-  return { metadata: { name: profile.name, fontFamily: profile.fontFamily, sha256, smoothing: profile.smoothing },
+  return { metadata: { name: profile.name, fontFamily: profile.fontFamily, sha256, smoothing: profile.smoothing,
+    ...(profile.platformFamily && { platformFamily: profile.platformFamily }) },
     base64: bytes.toString('base64') };
 }
 
-async function checkCaptureDestination(outDir, profile) {
+async function checkCaptureDestination(outDir, profile, fontMode) {
   let previous;
   try { previous = JSON.parse(await readFile(path.join(outDir, 'bundle.json'), 'utf8')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
-  if (previous && !isDeepStrictEqual(previous.rasterProfile, profile)) {
+  if (previous && (!isDeepStrictEqual(previous.rasterProfile, profile) || previous.fontMode !== fontMode)) {
     throw Error('Capture baseline differs. Use a separate output directory for each raster profile and the original.');
   }
   if (profile) {
@@ -93,13 +98,14 @@ async function openState(browser, viewport, state, routes, raster, run) {
   try {
     context.setDefaultTimeout(actionTimeout);
     if (raster) {
-      await context.addInitScript(({ base64 }) => {
+      await context.addInitScript(({ base64, fontFamily, smoothing, weight }) => {
         const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
-        document.fonts.add(new FontFace('Arimo', bytes.buffer, { weight: '400 700' }));
+        document.fonts.add(new FontFace(fontFamily, bytes.buffer, { weight }));
         const sheet = new CSSStyleSheet();
-        sheet.replaceSync('*, ::before, ::after { font-family: Arimo, sans-serif !important; -webkit-font-smoothing: antialiased !important; }');
+        const smooth = smoothing === 'antialiased' ? '-webkit-font-smoothing: antialiased !important;' : '';
+        sheet.replaceSync(`*, ::before, ::after { font-family: "${fontFamily}", sans-serif !important; ${smooth} }`);
         document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
-      }, { base64: raster.base64 });
+      }, { base64: raster.base64, ...raster.metadata, weight: raster.weight });
     }
     for (const fixture of routes) {
       await context.route(fixture.url, route => route.fulfill({ status: fixture.status ?? 200, json: fixture.json }));
@@ -117,14 +123,14 @@ async function openState(browser, viewport, state, routes, raster, run) {
     }
     if (state.ready) await page.locator(`css:light=${state.ready}`).filter({ visible: true }).first().waitFor({ state: 'visible' });
     if (raster) {
-      await page.evaluate(async () => {
-        const faces = await document.fonts.load('400 16px Arimo');
-        const candidates = [...document.fonts].filter(face => face.family.replace(/["']/g, '').toLowerCase() === 'arimo');
+      await page.evaluate(async ({ fontFamily: family, smoothing }) => {
+        const faces = await document.fonts.load(`400 16px "${family}"`);
+        const candidates = [...document.fonts].filter(face => face.family.replace(/["']/g, '').toLowerCase() === family.toLowerCase());
         if (faces.length !== 1 || candidates.length !== 1 || faces[0].status !== 'loaded' ||
-            getComputedStyle(document.documentElement).webkitFontSmoothing !== 'antialiased') {
-          throw Error('Controlled Arimo font is unavailable or ambiguous, or antialiased smoothing is unavailable');
+            (smoothing === 'antialiased' && getComputedStyle(document.documentElement).webkitFontSmoothing !== 'antialiased')) {
+          throw Error(`Controlled ${family} font is unavailable or ambiguous, or antialiased smoothing is unavailable`);
         }
-      });
+      }, raster.metadata);
     }
     const ready = await page.evaluate(async () => {
       const visibleImages = [...document.images].filter(image => {
@@ -198,7 +204,7 @@ async function readBoard(page, config, viewport, state, id, ready, images, stage
   const selectors = [...new Set((config.edges ?? []).filter(edge => edge.from === state.id).map(edge => edge.selector))];
   const dom = await page.evaluate(collectDOM, {
     boardId: id, components: config.components ?? [], tokenVariables: config.tokens ?? {},
-    edgeSelectors: selectors, svgImages: await svgResources(page, images)
+    edgeSelectors: selectors, svgImages: await svgResources(page, images), fontMode: config.fontMode
   });
   const signature = await page.evaluate(stateFingerprint);
   const url = page.url();
@@ -222,16 +228,29 @@ async function readBoard(page, config, viewport, state, id, ready, images, stage
     selectors: [...new Set(config.states.map(item => item.ready).filter(Boolean))]
   });
   const board = { id, state: state.id, viewport: viewport.id, width: viewport.width, height: viewport.height, children: dom.children };
-  if (config.fontEvidence || config.rasterProfile) board.fontEvidence = await renderedFonts(page, id, dom.children);
+  if (config.fontEvidence || config.rasterProfile || config.fontMode) board.fontEvidence = await renderedFonts(page, id, dom.children);
+  if (config.fontMode === 'original') {
+    const byLayer = new Map();
+    for (const host of board.fontEvidence) {
+      const families = new Set(host.fonts.filter(font => font.glyphCount > 0).map(font => font.familyName));
+      if (families.size === 1) for (const layer of host.layers) byLayer.set(layer, [...families][0]);
+    }
+    function applyFont(node) {
+      if (node.kind === 'text' && byLayer.has(node.id)) node.style.fontFamily = byLayer.get(node.id);
+      node.children?.forEach(applyFont);
+    }
+    board.children.forEach(applyFont);
+  }
   if (config.rasterProfile) {
-    const mismatch = await page.evaluate(selectors => selectors.find(selector => {
+    const mismatch = await page.evaluate(({ selectors, expected, smoothing }) => selectors.find(selector => {
       const style = getComputedStyle(document.querySelector(selector));
       const family = style.fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, '');
-      return style.webkitFontSmoothing !== 'antialiased' || family.toLowerCase() !== 'arimo';
-    }), board.fontEvidence.map(host => host.selector));
+      return (smoothing === 'antialiased' && style.webkitFontSmoothing !== 'antialiased') || family.toLowerCase() !== expected.toLowerCase();
+    }), { selectors: board.fontEvidence.map(host => host.selector), expected: config.rasterProfile.fontFamily, smoothing: config.rasterProfile.smoothing });
     if (mismatch) throw Error(`Raster text style mismatch at ${mismatch}`);
     for (const { selector, fonts } of board.fontEvidence) {
-      if (!fonts.length || fonts.some(font => !font.isCustomFont || font.familyName !== 'Arimo')) {
+      const platformFamily = config.rasterProfile.platformFamily ?? config.rasterProfile.fontFamily;
+      if (!fonts.length || fonts.some(font => !font.isCustomFont || font.familyName !== platformFamily)) {
         throw Error(`Raster font mismatch at ${selector}: ${JSON.stringify(fonts)}`);
       }
     }
@@ -293,9 +312,17 @@ async function verifyEdge(browser, config, viewport, states, snapshots, edge, ra
  */
 export async function capture(config, outDir) {
   validate(config);
+  if (config.fontMode === 'controlled' && !config.rasterProfile) throw Error('Controlled font mode requires a rasterProfile');
+  if (config.fontMode === 'original' && config.rasterProfile) throw Error('Original font mode cannot apply a rasterProfile');
+  return captureFontRun(config, outDir, captureBaseline);
+}
+
+async function captureBaseline(config, outDir) {
   const raster = await loadRasterProfile(config.rasterProfile);
+  if (raster) raster.weight = config.fontMode === 'controlled' ? '100 900' : '400 700';
   const bundle = { version: 1, project: config.project, boards: [], edges: [], tokens: {}, warnings: [] };
   if (raster) bundle.rasterProfile = raster.metadata;
+  if (config.fontMode) bundle.fontMode = config.fontMode;
   const tokens = new Map();
   const states = new Map(config.states.map(state => [state.id, state]));
   await mkdir(outDir, { recursive: true });
@@ -304,7 +331,7 @@ export async function capture(config, outDir) {
   let stage;
   const files = [];
   try {
-    await checkCaptureDestination(outDir, raster?.metadata);
+    await checkCaptureDestination(outDir, raster?.metadata, config.fontMode);
     stage = await mkdtemp(path.join(outDir, '.capture-'));
     const browser = await chromium.launch();
     try {

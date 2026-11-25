@@ -1,5 +1,6 @@
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { PNG } from 'pngjs';
 
 const asText = value => typeof value === 'string' ? value : JSON.stringify(value);
@@ -61,6 +62,9 @@ function issueText(issue) {
     case 'ambiguous-filename': return '多个画板对应同一 PNG 文件名';
     case 'invalid-board': return '画板标识或预期尺寸无效';
     case 'invalid-export-manifest': return `Figma 导出清单无效（${issue.detail}）`;
+    case 'font-export-source-mismatch': return '需要同一字体采集包导出的设计差异清单';
+    case 'source-font-unverified': return `源码字形证据待确认 · ${issue.detail}`;
+    case 'figma-font-mismatch': return `Figma 文字层字体或字重不匹配 · ${issue.detail}`;
     case 'empty-bundle': return '采集包中没有画板';
     default: return asText(issue);
   }
@@ -69,7 +73,9 @@ function issueText(issue) {
 function boardSection(board, source, figma, heat) {
   const counts = board.diffRatio === null ? '未计算差异比例' :
     `差异像素 ${board.diffPixels} / ${board.totalPixels} (${percent(board.diffRatio)})`;
-  return `<section><h2>${escapeHtml(board.id)}</h2><p><strong>${board.passed ? '通过' : '失败'}</strong> · 预期 ${escapeHtml(board.expected.width)} × ${escapeHtml(board.expected.height)} · ${counts}</p>
+  const fontStatus = { passed: '通过', failed: '不匹配', unverified: '待确认', 'not-applicable': '无可编辑文字' };
+  const fonts = board.fontAlignment ? `<p>字体对齐 · ${fontStatus[board.fontAlignment.status]}（${board.fontAlignment.textLayers} 个可编辑文字层）</p>` : '';
+  return `<section><h2>${escapeHtml(board.id)}</h2><p><strong>${board.passed ? '通过' : '失败'}</strong> · 预期 ${escapeHtml(board.expected.width)} × ${escapeHtml(board.expected.height)} · ${counts}</p>${fonts}
 ${itemList(board.issues.map(issueText))}<div class="images">${figure('源页面', source?.bytes, source?.size)}${figure('Figma 导出', figma?.bytes, figma?.size)}${figure('差异热图', heat, heat ? source.size : null)}</div></section>`;
 }
 
@@ -100,7 +106,45 @@ async function loadExportIndex(figmaDir) {
     if (files.has(key)) throw new Error(`Repeated export filename ${board.file}`);
     files.add(key);
   }
-  return { boards, warnings: manifest.warnings ?? [] };
+  return { boards, warnings: manifest.warnings ?? [], digest: manifest.sourceSha256, fonts: manifest.observed?.fonts };
+}
+
+function checkBoardFonts(board, rows, bundle) {
+  const source = new Map();
+  for (const host of board.fontEvidence ?? []) {
+    for (const id of host.layers) source.set(id, host.fonts.filter(font => font.glyphCount > 0));
+  }
+  const actual = new Map();
+  for (const row of rows ?? []) {
+    if (row.boardId === board.id) actual.set(row.id, actual.has(row.id) ? null : row);
+  }
+  const issues = [];
+  let textLayers = 0;
+  function inspect(node) {
+    if (node.kind === 'text') {
+      textLayers++;
+      const fonts = source.get(node.id) ?? [];
+      const families = new Set(fonts.map(font => font.familyName));
+      const observed = actual.get(node.id);
+      const family = node.style?.fontFamily, style = node.style?.fontStyle ?? 'Regular';
+      const platformFamily = bundle.fontMode === 'controlled' ? bundle.rasterProfile?.platformFamily ?? family : family;
+      if (families.size !== 1 || !families.has(platformFamily) ||
+          (node.style?.fontWeight != null && (node.style.fontWeight % 100 !== 0 || node.style.fontWeight < 100 || node.style.fontWeight > 900)) ||
+          (bundle.fontMode === 'controlled' && (family !== bundle.rasterProfile?.fontFamily || fonts.some(font => !font.isCustomFont)))) {
+        issues.push({ code: 'source-font-unverified', detail: `${node.id}: ${[...families].join(', ') || 'glyph evidence unavailable'}` });
+      }
+      const normalize = value => typeof value === 'string' ? value.replace(/[\s-]/g, '').toLowerCase() : null;
+      if (!observed || observed.missing !== false || observed.family !== family || normalize(observed.style) !== normalize(style)) {
+        issues.push({ code: 'figma-font-mismatch', detail: `${node.id}: expected ${family} ${style}, observed ${observed?.family ?? '?'} ${observed?.style ?? '?'}` });
+      }
+    }
+    node.children?.forEach(inspect);
+  }
+  board.children.forEach(inspect);
+  let status = textLayers ? 'passed' : 'not-applicable';
+  if (issues.some(issue => issue.code === 'source-font-unverified')) status = 'unverified';
+  else if (issues.length) status = 'failed';
+  return { textLayers, status, issues };
 }
 
 function documentHtml(report, sections) {
@@ -108,7 +152,7 @@ function documentHtml(report, sections) {
   const profile = report.rasterProfile;
   const reference = profile
     ? `参考图来自受控字体采集（${escapeHtml(profile.name)}）。字体 ${escapeHtml(profile.fontFamily)}，平滑设置 ${escapeHtml(profile.smoothing)}。`
-    : '参考图来自原始采集。';
+    : report.fontMode === 'controlled' ? `统一字体实验，原生夹具声明 ${escapeHtml(report.fontFamily)}。` : '参考图来自原始采集。';
   return `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
@@ -121,7 +165,7 @@ p{max-inline-size:80ch}
 figcaption{font-weight:600;margin-block-end:.5rem}figure img{display:block;inline-size:100%;block-size:auto;border:1px solid #ccd3d8}
 </style></head><body><main><h1>视觉验收${report.passed ? '通过' : '失败'}</h1>
 <p>通过 ${passedCount} / ${report.boards.length} 个画板。允许差异比例 ${percent(report.maxDiffRatio)}，单像素通道容差 ${report.pixelTolerance} / 255。热图用红色标出超过通道容差的像素。</p>
-<p>${reference}</p>
+<p>${reference}${report.fontMode === 'controlled' ? ' 本报告记录统一字体实验结果。' : report.fontMode === 'original' ? ' 按原始字体验收。' : ''}</p>
 ${itemList(report.issues.map(issueText))}${sections.join('\n')}
 ${report.warnings.length ? `<section><h2>采集警告</h2>${itemList(report.warnings)}</section>` : ''}
 ${report.figmaWarnings.length ? `<section><h2>Figma 导出警告</h2>${itemList(report.figmaWarnings)}</section>` : ''}
@@ -138,17 +182,22 @@ export async function verify(captureDir, figmaDir, outDir, options = {}) {
   if (!Number.isInteger(pixelTolerance) || pixelTolerance < 0 || pixelTolerance > 255) {
     throw new RangeError('pixelTolerance must be an integer from 0 to 255');
   }
-  const bundle = JSON.parse(await readFile(path.join(captureDir, 'bundle.json'), 'utf8'));
+  const bytes = await readFile(path.join(captureDir, 'bundle.json'));
+  const bundle = JSON.parse(bytes);
   if (!Array.isArray(bundle.boards)) throw new TypeError('bundle.boards must be an array');
   const report = {
     passed: false, maxDiffRatio, pixelTolerance, boards: [], edges: bundle.edges ?? [],
     rasterProfile: bundle.rasterProfile ?? null,
+    ...(bundle.fontMode && { fontMode: bundle.fontMode, fontFamily: bundle.rasterProfile?.fontFamily ?? bundle.controlledFontFamily ?? null }),
     warnings: bundle.warnings ?? [], figmaWarnings: [], issues: bundle.boards.length ? [] : [{ code: 'empty-bundle' }]
   };
   let exports;
   try {
     exports = await loadExportIndex(figmaDir);
     report.figmaWarnings = exports?.warnings ?? [];
+    if (bundle.fontMode && exports?.digest !== createHash('sha256').update(bytes).digest('hex')) {
+      report.issues.push({ code: 'font-export-source-mismatch', detail: 'A design-diff.json exported from this exact font capture is required' });
+    }
   } catch (error) {
     report.issues.push({ code: 'invalid-export-manifest', detail: error.message });
     exports = { boards: new Map() };
@@ -160,7 +209,8 @@ export async function verify(captureDir, figmaDir, outDir, options = {}) {
   }
   await mkdir(path.join(outDir, 'heatmaps'), { recursive: true });
   const sections = [];
-  for (const { id, width, height, viewport, state } of bundle.boards) {
+  for (const captured of bundle.boards) {
+    const { id, width, height, viewport, state } = captured;
     const filename = `${viewport}--${state}.png`;
     const board = {
       id, viewport, state, filename, expected: { width, height }, source: null, figma: null,
@@ -180,6 +230,15 @@ export async function verify(captureDir, figmaDir, outDir, options = {}) {
     }
     const exported = exports?.boards.get(id);
     board.figmaFilename = exports ? exported?.file ?? null : filename;
+    if (bundle.fontMode) {
+      const { issues, ...alignment } = checkBoardFonts(captured, exports?.fonts, bundle);
+      board.fontAlignment = alignment;
+      board.issues.push(...issues);
+      if (report.issues.some(issue => ['invalid-export-manifest', 'font-export-source-mismatch'].includes(issue.code))) {
+        board.fontAlignment.status = 'unverified';
+        board.issues.push({ code: 'font-export-source-mismatch' });
+      }
+    }
     const source = await loadImage(path.join(captureDir, 'source', filename), 'source', board.issues);
     let figma = null;
     if (!board.figmaFilename || exported?.status === 'missing') {
