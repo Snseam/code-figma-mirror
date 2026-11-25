@@ -105,6 +105,7 @@ function decodeBoard(bundle, packet, expectedEdges) {
   assert(nodeIds.size === rows.length, `Duplicate native ID in ${boardId}`);
   const destinations = new Map(frames.map((native, index) => [native, bundle.boards[index].id]));
   const observed = { geometry: [], instances: [], edges: [], reactions: [] };
+  if (bundle.fontMode) observed.fonts = [];
   const warnings = [], baseline = [], measured = [];
   for (const [slot, row] of rows.entries()) {
     const [figmaId, parentNative, index, type, x, y, width, height, detail, fontSize] = row;
@@ -127,6 +128,7 @@ function decodeBoard(bundle, packet, expectedEdges) {
     }
     if (spec.kind === 'text') before.text = spec.text;
     if (type === 'TEXT') {
+      if (observed.fonts) observed.fonts.push({ boardId, id: spec.id, family: row[10], style: row[11], missing: row[12] !== false });
       assert(typeof detail === 'string' && (Number.isFinite(fontSize) || fontSize === 'MIXED'), `Unreadable text for ${spec.id}`);
       geometry.text = detail;
       after.text = detail;
@@ -302,7 +304,7 @@ export async function merge(bytes, packets, pngDir) {
   return { version: 1, project: bundle.project, revision: null, sourceSha256: createHash('sha256').update(bytes).digest('hex'),
     pageId: context.output, cloud, boards: manifest, ...(tokenSnapshot.tokens ? { tokens: tokenSnapshot.tokens } : {}),
     changes: [...boards.flatMap(item => item.changes), ...tokenSnapshot.changes],
-    observed: Object.fromEntries(['geometry', 'instances', 'edges', 'reactions'].map(key =>
+    observed: Object.fromEntries(['geometry', 'instances', 'edges', 'reactions', ...(bundle.fontMode ? ['fonts'] : [])].map(key =>
       [key, boards.flatMap(item => item.observed[key])])),
     warnings: [...bundle.warnings, ...boards.flatMap(item => item.warnings),
       ...(tokenSnapshot.tokens ? [] : ['Color tokens were not observed. Collect the optional tokens request before reviewing token changes.'])] };

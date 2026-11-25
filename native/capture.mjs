@@ -3,8 +3,9 @@ import { lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
-import { isDeepStrictEqual } from 'node:util';
+import { isDeepStrictEqual, parseArgs } from 'node:util';
 import { prepareConfig } from './config.mjs';
+import { captureFontRun } from '../font-run.mjs';
 import { locate, measureNodes, MissingNode, screenshotSpace } from './measure.mjs';
 
 async function until(probe, description, timeout) {
@@ -71,6 +72,15 @@ async function captureBoard(program, viewport, state, stage, bundle, evidence, t
   const space = screenshotSpace(bytes, info);
   const children = await measureNodes(state.selectors, page, id, { left: 0, top: scrollTop - space.top },
     space.scale, warning => bundle.warnings.push(warning));
+  if (bundle.fontMode === 'controlled') {
+    function checkFont(node) {
+      if (node.kind === 'text' && node.style.fontFamily !== bundle.controlledFontFamily) {
+        throw Error(`${node.id}: expected native fixture font ${bundle.controlledFontFamily}, measured ${node.style.fontFamily}`);
+      }
+      node.children?.forEach(checkFont);
+    }
+    children.forEach(checkFont);
+  }
   if (!(await observedPage(program, state)) || await page.scrollTop() !== scrollTop) {
     throw new Error(`${id}: page or scroll position changed during capture`);
   }
@@ -178,6 +188,14 @@ async function officialSdk() {
 
 async function run(config, output, loadSdk, source) {
   const plan = prepareConfig(config);
+  if (config.fontMode === 'controlled') {
+    if (typeof config.controlledFontFamily !== 'string' || !/^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u.test(config.controlledFontFamily)) {
+      throw Error('Native controlled mode requires controlledFontFamily');
+    }
+    config = { ...config, states: config.states.map(state => ({
+      ...state, data: { ...state.data, mirrorFontFamily: config.controlledFontFamily }
+    })) };
+  }
   const destination = path.resolve(output);
   const existing = await lstat(destination).catch(error => {
     if (error.code !== 'ENOENT') throw error;
@@ -191,6 +209,11 @@ async function run(config, output, loadSdk, source) {
       'Source: WeChat DevTools native Mini Program simulator.'
   ] };
   const evidence = { source, boards: [] };
+  if (config.fontMode) {
+    bundle.fontMode = config.fontMode;
+    if (config.fontMode === 'controlled') bundle.controlledFontFamily = config.controlledFontFamily;
+    bundle.warnings.push('Native DevTools reports declared font families; per-glyph font evidence is unavailable.');
+  }
   if (plan.scenarios.length) evidence.scenarios = [];
   const parent = path.dirname(destination);
   await mkdir(parent, { recursive: true });
@@ -210,13 +233,24 @@ async function run(config, output, loadSdk, source) {
   }
 }
 
-export const capture = (config, output) => run(config, output, officialSdk, 'wechat-devtools-simulator');
-export const captureWithStub = (config, output, stub) => run(config, output, () => stub, 'contract-stub');
+export const capture = (config, output) => captureFontRun(config, output,
+  (settings, dir) => run(settings, dir, officialSdk, 'wechat-devtools-simulator'));
+export const captureWithStub = (config, output, stub) => captureFontRun(config, output,
+  (settings, dir) => run(settings, dir, () => stub, 'contract-stub'));
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {
-    if (process.argv.length !== 4) throw new Error('Usage: node native/capture.mjs <config.json> <output>');
-    const bundle = await capture(JSON.parse(await readFile(process.argv[2], 'utf8')), process.argv[3]);
+    const { positionals, values } = parseArgs({ allowPositionals: true, options: {
+      'font-mode': { type: 'string' }, 'font-family': { type: 'string' }
+    } });
+    if (positionals.length !== 2) throw new Error('Usage: node native/capture.mjs <config.json> <output> [--font-mode original|controlled] [--font-family <family>]');
+    const config = JSON.parse(await readFile(positionals[0], 'utf8'));
+    if (values['font-mode'] !== undefined) config.fontMode = values['font-mode'];
+    if (values['font-family'] !== undefined) {
+      if (config.fontMode !== 'controlled') throw Error('--font-family requires controlled mode');
+      config.controlledFontFamily = values['font-family'];
+    }
+    const bundle = await capture(config, positionals[1]);
     console.log(`wechat-devtools-simulator: ${bundle.boards.length} boards, ${bundle.edges.length} verified edges`);
   } catch (error) {
     console.error(error.message);

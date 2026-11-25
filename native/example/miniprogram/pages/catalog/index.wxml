@@ -1,5 +1,5 @@
-<view>
-  <button id="filter" bindtap="toggleFilter">
+<view style="{{mirrorFontFamily ? 'font-family:' + mirrorFontFamily : ''}}">
+  <button id="filter" bindtap="toggleFilter" style="{{mirrorFontFamily ? 'font-family:' + mirrorFontFamily : ''}}">
     <text id="filter-label">{{filter === 'all' ? '只看叶片' : '显示全部'}}</text>
   </button>
   <navigator id="open" url="/pages/leaf/index">

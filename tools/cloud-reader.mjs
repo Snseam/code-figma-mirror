@@ -52,6 +52,7 @@ export async function readBoard(figma, request) {
     const row = [id, node.parent.id, index, type, x, y, width, height];
     if (type === 'TEXT') row.push(node.characters, Number.isFinite(node.fontSize) ? node.fontSize : 'MIXED');
     else if ('cornerRadius' in node) row.push(Number.isFinite(node.cornerRadius) ? node.cornerRadius : 'MIXED');
+    if (bundle.fontMode && type === 'TEXT') row.push(node.fontName?.family ?? null, node.fontName?.style ?? null, node.hasMissingFont === true);
     rows.push(row);
     if (type === 'INSTANCE') {
       const main = await node.getMainComponentAsync();

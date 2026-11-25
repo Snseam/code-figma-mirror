@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { link, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -40,6 +41,38 @@ async function pair(fixture, name, source, figma) {
     writeFile(path.join(fixture.figma, name), figma)
   ]);
 }
+
+test('identical pixels require matched font provenance and live family/style readback in font modes', async context => {
+  const panel = board();
+  const face = { familyName: 'Example Sans VF', isCustomFont: true, glyphCount: 3 };
+  panel.children = [{ id: 'title', kind: 'text', style: { fontFamily: 'Example Sans', fontStyle: 'Bold' } }];
+  panel.fontEvidence = [{ layers: ['title'], fonts: [face] }];
+  const captured = { boards: [panel], fontMode: 'controlled', rasterProfile: {
+    name: 'fixture', fontFamily: 'Example Sans', platformFamily: face.familyName, smoothing: 'antialiased'
+  } };
+  const fixture = await capture(context, [panel], captured);
+  const image = png(2, 1, [0xffffffff, 0xff00ffff]);
+  const file = 'desktop--inbox.png';
+  await pair(fixture, file, image, image);
+  const font = { boardId: panel.id, id: 'title', family: 'Example Sans', style: 'Bold', missing: false };
+  const snapshot = { boards: [{ id: panel.id, file }], observed: { fonts: [font] } };
+  const save = () => writeFile(path.join(fixture.figma, 'design-diff.json'), JSON.stringify(snapshot));
+  const digest = async () => createHash('sha256').update(await readFile(path.join(fixture.root, 'bundle.json'))).digest('hex');
+  await save();
+  assert.equal((await fixture.run()).passed, false);
+  snapshot.sourceSha256 = await digest();
+  await save();
+  assert.equal((await fixture.run()).passed, true);
+  font.style = 'Regular';
+  await save();
+  assert.equal((await fixture.run()).boards[0].issues[0].code, 'figma-font-mismatch');
+  font.style = 'Bold';
+  panel.fontEvidence[0].fonts.push({ ...face, familyName: 'Fallback' });
+  await writeFile(path.join(fixture.root, 'bundle.json'), JSON.stringify(captured));
+  snapshot.sourceSha256 = await digest();
+  await save();
+  assert.equal((await fixture.run()).boards[0].issues[0].code, 'source-font-unverified');
+});
 
 test('verify persists independent HTML, metrics, inputs, and a correctly oriented PNG heatmap', async context => {
   const edges = [{ from: 'inbox', to: 'message', action: 'open' }];

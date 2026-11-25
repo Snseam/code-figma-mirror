@@ -1,0 +1,8 @@
+{
+  "name": "noto-sans-sc-variable",
+  "fontFamily": "Noto Sans SC",
+  "platformFamily": "Noto Sans SC Thin",
+  "smoothing": "preserve",
+  "sha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+  "fontFile": "../../build/raster-acceptance/fonts/noto-sans-sc.ttf"
+}

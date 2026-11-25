@@ -216,6 +216,21 @@ test('snapped absolute edges rebase nested components and preserve fractional de
   }
 })
 
+test('explicit font modes disallow renderer fallback and include live faces in the merged export', async () => {
+  const layer = { id: 'label', name: 'Label', kind: 'text', text: 'Sample', x: 0, y: 0, width: 80, height: 20,
+    style: { fontFamily: 'Arimo', fontStyle: 'Regular', fontSize: 16 } }
+  const board = { id: 'phone/home', viewport: 'phone', state: 'home', width: 100, height: 40, children: [layer] }
+  const data = { ...bundle, fontMode: 'original', boards: [board], tokens: {}, edges: [] }
+  const context = canvas(data), rendered = await context.run(raw)
+  const origin = { source: context.source.id, frame: context.transfer.id, output: context.output.id,
+    section: rendered.sectionId, stamp: signature(JSON.stringify(data)), part: 1, board: board.id }
+  const snapshot = await merge(Buffer.from(JSON.stringify(data)), [await readBoard(context.figma, origin)])
+  assert.deepEqual(snapshot.observed.fonts, [{ boardId: board.id, id: layer.id, family: 'Arimo', style: 'Regular', missing: false }])
+  data.fontMode = 'controlled'
+  layer.style.fontFamily = 'Unavailable'
+  await assert.rejects(canvas(data).run(raw), /Missing font: Unavailable Regular/)
+})
+
 test('unpainted descendants retain the original local precision when their ancestors did not move', () => {
   const leaf = { kind: 'frame', x: 0.1, y: 0.2, width: 1, height: 1 }
   const parent = { kind: 'frame', x: 150.125, y: 700.25, width: 10, height: 10, children: [leaf] }

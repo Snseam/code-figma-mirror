@@ -4,6 +4,12 @@
 
 ## 运行
 
+原生采集也接受配置字段 `fontMode`，取值为 `original` 或 `controlled`。使用 `native/example.json` 的副本时，加入 `"fontMode": "controlled", "controlledFontFamily": "Noto Sans SC"` 即可生成原始与实验两份模拟器采集。实验字体需在测试环境就绪。观察卡示例会将 `mirrorFontFamily` 绑定到文字容器和按钮；自有夹具需在测试构建中提供同一绑定，包括跨页导航到达的状态。采集器检查每个声明文字层的实测样式，报告第一个不符的选择器。两份采集在桌面插件和 `verify` 中的用法见[字体方案](../examples/inbox/raster-capture.md#字体方案)。
+
+模拟器当前提供计算样式，无法证明每个字形实际使用的字体。两种方案均保留这个证据缺口，报告标记 `source-font-unverified`。`contract-stub` 的截图和测量仅用于合同测试。
+
+也可直接从命令行选择方案，例如 `node native/capture.mjs native/return-context.json build/native-font-pair --font-mode controlled --font-family "Noto Sans SC"`。
+
 以下命令在仓库根目录执行。沿用项目的 Node 22 和已有 `pngjs` 依赖。仅运行合同测试时使用第一条命令即可。
 
 ```sh

@@ -31,6 +31,7 @@ function double(options = {}) {
   let page;
   let title;
   let expanded;
+  let fixtureFamily;
   const styles = {
     'background-color': 'rgb(0, 17, 255)', opacity: '0.8', 'border-top-width': '1px',
     'border-top-color': '#abc', 'border-top-left-radius': '6px', overflow: 'hidden',
@@ -50,7 +51,7 @@ function double(options = {}) {
       $$: child => query(selector, child),
       offset: () => selector === '#card' ? { left: 3, top: 11 } : { left: 5, top: 18 },
       size: () => ({ width: 20, height: 10 }),
-      style: field => styles[field] ?? '',
+      style: field => field === 'font-family' && options.bindFont && fixtureFamily ? fixtureFamily : styles[field] ?? '',
       text: () => selector === '#title' ? title : selector,
       input(value) { events.push(['input', value]); },
       tap() {
@@ -65,7 +66,7 @@ function double(options = {}) {
     const [pathname, queryString] = url.split('?');
     return {
       path: pathname.slice(1), query: Object.fromEntries(new URLSearchParams(queryString)),
-      async setData(data) { title = data.title; expanded = data.expanded; events.push(['data', title]); },
+      async setData(data) { title = data.title; expanded = data.expanded; fixtureFamily = data.mirrorFontFamily; events.push(['data', title]); },
       $$: selector => query('page', selector), scrollTop: () => 7
     };
   }
@@ -86,6 +87,23 @@ function double(options = {}) {
   };
   return { sdk, events, image };
 }
+
+test('native font experiments keep both baselines and reject the wrong fixture family', async context => {
+  const settings = { ...config(), fontMode: 'controlled', controlledFontFamily: 'Experiment Sans' };
+  const out = await outputFor(context);
+  await captureWithStub(settings, out, double({ bindFont: true }).sdk);
+  for (const mode of ['original', 'controlled']) {
+    const bundle = JSON.parse(await readFile(path.join(out, mode, 'bundle.json')));
+    assert.equal(bundle.fontMode, mode);
+    assert.equal(bundle.controlledFontFamily, mode === 'controlled' ? 'Experiment Sans' : undefined);
+    const title = bundle.boards[0].children[0].children[0];
+    assert.equal(title.style.fontFamily, mode === 'controlled' ? 'Experiment Sans' : 'Test Sans');
+    assert.match(bundle.warnings.join('\n'), /per-glyph font evidence is unavailable/);
+  }
+  const wrong = await outputFor(context);
+  await assert.rejects(captureWithStub({ ...settings, controlledFontFamily: 'Missing Sans' }, wrong, double().sdk), /expected native fixture font/);
+  assert.deepEqual(await readdir(path.dirname(wrong)), []);
+});
 
 test('stub run produces compatible IR, actual supplied bytes and explicit synthetic provenance', async context => {
   const out = await outputFor(context);

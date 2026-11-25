@@ -1,4 +1,4 @@
-<view>
+<view style="{{mirrorFontFamily ? 'font-family:' + mirrorFontFamily : ''}}">
   <text id="description">白桦叶的边缘呈锯齿形。</text>
   <navigator id="back" open-type="navigateBack" delta="1">
     <text id="back-label">返回观察列表</text>

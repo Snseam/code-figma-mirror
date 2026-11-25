@@ -4,7 +4,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
-const usage = `node cli.mjs capture <scenarios.json> <capture-dir> [--font-evidence] [--raster-profile <profile.json>]
+const usage = `node cli.mjs capture <scenarios.json> <capture-dir> [--font-mode original|controlled] [--font-evidence] [--raster-profile <profile.json>]
 node cli.mjs inspect <bundle.json>
 node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1]
 node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01]
@@ -12,7 +12,7 @@ node cli.mjs review <base.json> <current.json> <figma-snapshot.json> <out-dir> [
 node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out-dir> --css theme.css --mappings mappings.json`;
 const readJson = async file => JSON.parse(await readFile(file, 'utf8'));
 
-export async function loadScenarios(file, rasterProfileFile) {
+export async function loadScenarios(file, rasterProfileFile, fontMode) {
   const config = await readJson(file);
   const base = pathToFileURL(path.resolve(file));
   if (!Array.isArray(config.states) || !config.states.length) throw new Error('Expected at least one state');
@@ -20,6 +20,11 @@ export async function loadScenarios(file, rasterProfileFile) {
     const target = new URL(state.url, base);
     if (!['http:', 'https:', 'file:'].includes(target.protocol)) throw new Error(`Unsupported URL in ${state.id}`);
     state.url = target.href;
+  }
+  if (fontMode !== undefined) config.fontMode = fontMode;
+  if (config.fontMode === 'original') {
+    if (rasterProfileFile) throw Error('--font-mode original cannot be combined with --raster-profile');
+    delete config.rasterProfile;
   }
   if (rasterProfileFile !== undefined || config.rasterProfile !== undefined) {
     const profilePath = rasterProfileFile !== undefined ? path.resolve(rasterProfileFile)
@@ -76,7 +81,7 @@ async function main() {
   }
   const { positionals, values } = parseArgs({ args, allowPositionals: true, options: {
     'pixel-tolerance': { type: 'string' }, 'max-diff-ratio': { type: 'string' }, 'font-evidence': { type: 'boolean' },
-    'geometry-tolerance': { type: 'string' }, 'raster-profile': { type: 'string' },
+    'geometry-tolerance': { type: 'string' }, 'raster-profile': { type: 'string' }, 'font-mode': { type: 'string' },
     css: { type: 'string' }, scenarios: { type: 'string' }, mappings: { type: 'string' }
   } });
   const arity = { capture: 2, inspect: 1, verify: 3, review: 4, 'review-styles': 4, audit: 3 };
@@ -85,9 +90,10 @@ async function main() {
   if (command === 'inspect') return console.log(JSON.stringify(inventory(await readJson(first)), null, 2));
   if (command === 'capture') {
     const { capture } = await import('./capture.mjs');
-    const config = await loadScenarios(first, values['raster-profile']);
+    const config = await loadScenarios(first, values['raster-profile'], values['font-mode']);
     if (values['font-evidence']) config.fontEvidence = true;
     const result = await capture(config, path.resolve(second));
+    if (config.fontMode) console.log(`Capture: ${path.resolve(second, config.fontMode)}`);
     const stats = inventory(result);
     console.log(JSON.stringify(stats, null, 2));
     if (stats.edges !== (config.edges || []).length * config.viewports.length) process.exitCode = 2;
@@ -103,8 +109,10 @@ async function main() {
     const options = {};
     if (values['pixel-tolerance'] !== undefined) options.pixelTolerance = Number(values['pixel-tolerance']);
     if (values['max-diff-ratio'] !== undefined) options.maxDiffRatio = Number(values['max-diff-ratio']);
-    const report = await verify(first, second, third, options);
-    console.log(`${report.boards.filter(board => board.passed).length}/${report.boards.length} passed · ${path.resolve(third, 'report.html')}`);
+    const { fontMode } = await readJson(path.join(first, 'bundle.json'));
+    const reportDir = ['original', 'controlled'].includes(fontMode) ? path.resolve(third, fontMode) : third;
+    const report = await verify(first, second, reportDir, options);
+    console.log(`${report.boards.filter(board => board.passed).length}/${report.boards.length} passed · ${path.resolve(reportDir, 'report.html')}`);
     if (!report.passed) process.exitCode = 2;
   } else if (command === 'review' || command === 'review-styles') {
     const styles = command === 'review-styles';
