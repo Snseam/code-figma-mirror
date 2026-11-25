@@ -101,7 +101,8 @@ function layoutIndex() {
   function shape(spec, parent) {
     const horizontal = axis(spec.x, spec.width, parent.width), vertical = axis(spec.y, spec.height, parent.height)
     const subtree = children(spec).map(child => shape(child, spec))
-    const style = Object.entries(spec.style || {}).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
+    const style = Object.entries(spec.style || {}).filter(([field]) => field !== 'tokenRefs')
+      .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
     const body = [spec.kind, style, spec.svg, subtree]
     const entry = { constraints: { horizontal: horizontal[0], vertical: vertical[0] } }
     if (spec.component) {

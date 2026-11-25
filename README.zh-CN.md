@@ -60,11 +60,20 @@ node cli.mjs verify build/inbox build/figma build/visual
 ```sh
 node cli.mjs capture <scenarios.json> <capture-dir> [--font-evidence] [--raster-profile <profile.json>]
 node cli.mjs inspect <bundle.json>
+node cli.mjs plan <base-bundle.json> <next-bundle.json> -o <patch-plan.json>
 node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1]
 node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01]
 node cli.mjs review <base.json> <current.json> <figma-snapshot.json> <out-dir> [--css theme.css] [--scenarios scenarios.json]
 node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out-dir> --css theme.css --mappings mappings.json
 ```
+
+### 预览一次增量更新
+
+将同一项目、同一光栅配置的两份采集包传给 `plan`。输出列出 Token、本地主组件及变体、画板、子树和原型连线的变更。`dirtyBoards` 包含直接变更以及受共享组件或颜色影响的现存画板。新增子树引用新版采集包，`index` 表示最终同级位置，`remappedIds` 记录同一画板内的新旧采集路径。本命令用于 Issue #4 的离线审查，写入 Figma 和检查设计师手改属于后续阶段。
+
+重复列表可以用业务主键设置同级唯一的 `data-mirror-id`。Web 采集器还记录唯一 HTML ID、React/Vue 探针提供的源码键以及标签、角色和类名。原生小程序使用 WXML 选择规则的 ID。规划器把同一 DOM 文本的测量行归为一个逻辑节点，也能读取旧版 v1 包。如果同级身份有歧义，CLI 会将候选写入 `ambiguities`，退出码为 2；需要确定映射时，两份采集都应带有对应的显式键。
+
+采集器先保存参考 PNG，再在临时页面中用两组颜色探测已配置的根变量。某个绘制属性两次都跟随同一变量时，`style.tokenRefs` 会记录配置中的 Token 名称。局部覆写和字面量保留实测颜色。估算影响画板时，未证实绑定的颜色按色值保守匹配。
 
 ## 已验证基准与当前边界
 

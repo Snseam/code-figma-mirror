@@ -1,4 +1,12 @@
-import { fileComponentName } from './identity.mjs';
+import { fileComponentName, sourceKey } from './identity.mjs';
+
+function conditionName(node) {
+  if (node.type === 'Identifier') return node.name;
+  if (node.type === 'MemberExpression' && !node.computed && node.property.type === 'Identifier') {
+    const parent = conditionName(node.object);
+    if (parent) return `${parent}.${node.property.name}`;
+  }
+}
 
 function componentName(fn, filename) {
   if (fn.parentPath.isVariableDeclarator() && fn.parentPath.node.id.type === 'Identifier') {
@@ -77,6 +85,26 @@ export default function componentIdentity(api, options = {}) {
               report(opening, component, 'skipped', 'spread-props');
             } else {
               attrs.push(types.jsxAttribute(types.jsxIdentifier('data-component'), types.stringLiteral(component)));
+              const key = sourceKey(filename, component, options.root ?? state.file.opts.root);
+              function mark(host, value) {
+                if (host.attributes.some(attr => attr.type === 'JSXSpreadAttribute' || attr.name.name === 'data-mirror-key')) return;
+                host.attributes.push(types.jsxAttribute(types.jsxIdentifier('data-mirror-key'), types.stringLiteral(value)));
+              }
+              if (key) {
+                mark(opening, key);
+                root.traverse({
+                  Function(nested) { nested.skip(); },
+                  JSXElement(element) {
+                    const host = element.node.openingElement;
+                    if (host.name.type !== 'JSXIdentifier' || !/^[a-z]/.test(host.name.name)) return element.skip();
+                    const parent = element.parentPath;
+                    const test = parent.isConditionalExpression() ? parent.node.test :
+                      parent.isLogicalExpression({ operator: '&&' }) && element.key === 'right' ? parent.node.left : null;
+                    const condition = test && conditionName(test);
+                    if (condition) mark(host, `${key}/${condition}/${element.key}`);
+                  }
+                });
+              }
               report(opening, component, 'injected', 'host-root');
             }
           },

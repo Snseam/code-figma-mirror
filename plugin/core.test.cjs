@@ -202,6 +202,9 @@ test("native instance descendants reject even equal coordinates; two placements 
   const primary = input.boards[0].children[0];
   const other = input.boards[1].children[0];
   other.width = primary.width;
+  other.stableId = "business:second-placement";
+  other.identity = { tag: "button" };
+  other.children[0].logicalId = "other/text-1";
   Object.assign(other.children[0], { x: 32, y: 4, width: 76, height: 17 });
   const result = await importProject(api, input, "two-layouts");
   const page = api.currentPage;

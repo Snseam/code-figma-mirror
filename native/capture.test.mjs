@@ -105,6 +105,7 @@ test('stub run produces compatible IR, actual supplied bytes and explicit synthe
   const board = bundle.boards[0];
   assert.deepEqual([board.width, board.height], [80, 130]);
   const frame = board.children[0];
+  assert.equal(frame.stableId, 'native:card');
   assert.deepEqual([frame.x, frame.y, frame.width, frame.height], [6, 28, 40, 20]);
   assert.deepEqual(frame.style, { fill: '#0011FF', strokeWidth: 2, stroke: '#AABBCC', radius: 12, clip: true, opacity: 0.8 });
   const title = frame.children[0];

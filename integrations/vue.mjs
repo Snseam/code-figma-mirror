@@ -1,5 +1,5 @@
 import { ElementTypes, NodeTypes } from '@vue/compiler-dom';
-import { fileComponentName } from './identity.mjs';
+import { fileComponentName, sourceKey } from './identity.mjs';
 
 function rootReason(element) {
   if (element.type !== NodeTypes.ELEMENT) return 'indirect-root';
@@ -14,10 +14,36 @@ function rootReason(element) {
   return null;
 }
 
-function isComponentAttribute(prop) {
+function attributeName(prop) {
   const name = prop.type === NodeTypes.ATTRIBUTE ? prop.name :
     prop.name === 'bind' && prop.arg?.isStatic ? prop.arg.content : '';
-  return name.toLowerCase() === 'data-component' || name === 'dataComponent';
+  return name.replaceAll('-', '').toLowerCase();
+}
+
+function stamp(element, key) {
+  if (element.props.some(prop => attributeName(prop) === 'datamirrorkey' ||
+    (prop.type === NodeTypes.DIRECTIVE && prop.name === 'bind' && !prop.arg?.isStatic))) return;
+  element.props.push({
+    type: NodeTypes.ATTRIBUTE, name: 'data-mirror-key', nameLoc: element.loc, loc: element.loc,
+    value: { type: NodeTypes.TEXT, content: key, loc: element.loc }
+  });
+}
+
+function markBranches(element, root) {
+  let condition;
+  for (const child of element.children) {
+    if (child.type === NodeTypes.COMMENT || (child.type === NodeTypes.TEXT && !child.content.trim())) continue;
+    if (child.type !== NodeTypes.ELEMENT || child.tagType !== ElementTypes.ELEMENT) {
+      condition = null;
+      continue;
+    }
+    const branch = child.props.find(prop => prop.type === NodeTypes.DIRECTIVE && ['if', 'else-if', 'else'].includes(prop.name));
+    const expression = branch?.exp?.content?.trim();
+    if (branch?.name !== 'else') condition = expression && /^[\w$]+(?:\.[\w$]+)*$/.test(expression) ? expression : null;
+    const key = branch && condition ? `${root}/${condition}/${branch.name}` : root;
+    if (key !== root) stamp(child, key);
+    markBranches(child, key);
+  }
 }
 
 export function vueComponentIdentity(options = {}) {
@@ -34,7 +60,7 @@ export function vueComponentIdentity(options = {}) {
     if (!component) reason = 'unknown-filename';
     else if (children.length !== 1) reason = 'fragment';
     else if ((reason = rootReason(element)) === null) {
-      if (element.props.some(isComponentAttribute)) {
+      if (element.props.some(prop => attributeName(prop) === 'datacomponent')) {
         status = 'preserved';
         reason = 'explicit-attribute';
       } else {
@@ -42,6 +68,11 @@ export function vueComponentIdentity(options = {}) {
           type: NodeTypes.ATTRIBUTE, name: 'data-component', nameLoc: element.loc, loc: element.loc,
           value: { type: NodeTypes.TEXT, content: component, loc: element.loc }
         });
+        const key = sourceKey(filename, component, options.root);
+        if (key) {
+          stamp(element, key);
+          markBranches(element, key);
+        }
         status = 'injected';
         reason = 'host-root';
       }

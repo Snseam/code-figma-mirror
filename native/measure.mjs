@@ -109,7 +109,7 @@ export async function measureNodes(rules, scope, boardId, origin, scale, warn) {
       throw new Error(`${id}: invalid or empty native bounds`);
     }
     const node = {
-      id, name: rule.name ?? rule.id, kind: rule.kind,
+      id, stableId: `native:${rule.id}`, name: rule.name ?? rule.id, kind: rule.kind,
       x: (offset.left - origin.left) * scale, y: (offset.top - origin.top) * scale,
       width: size.width * scale, height: size.height * scale,
       style: await measureStyle(element, { id, kind: rule.kind }, scale, warn)
