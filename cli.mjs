@@ -57,7 +57,7 @@ export function inventory(bundle) {
     board.children.forEach(visit);
   }
   for (const edge of bundle.edges || []) {
-    if (!boards.get(edge.from)?.has(edge.source) || !boards.has(edge.to)) {
+    if (!boards.get(edge.from)?.has(edge.source) || !(boards.has(edge.to) || edge.action === 'BACK' && edge.to == null)) {
       throw new Error(`Unresolved edge ${edge.from} / ${edge.source} → ${edge.to}`);
     }
   }

@@ -23,7 +23,7 @@ node cli.mjs inspect native/output/bundle.json
 
 | 文件 | 内容 |
 | --- | --- |
-| `bundle.json` | `version: 1`、项目名、画板、可编辑图层、已回放的 `NAVIGATE` 连线、空 `tokens` 字典和采集提示 |
+| `bundle.json` | `version: 1`、项目名、画板、可编辑图层、已回放的 `NAVIGATE` 与 `BACK` 连线、空 `tokens` 字典和采集提示 |
 | `source/phone--closed.png`、`source/phone--open.png` | 各状态的原始模拟器截图，保持 SDK 返回的 PNG 字节和像素尺寸 |
 | `evidence.json` | 渠道 `source`、每板实际页面路径、可用窗口尺寸、滚动位置、截图坐标模式和缩放比、是否注入场景数据 |
 
@@ -38,8 +38,27 @@ node cli.mjs inspect native/output/bundle.json
 | `state.steps` | 可选有序操作。`{"action":"tap","selector":"#toggle"}` 点击，`{"action":"input","selector":"#search","value":"叶"}` 输入，`{"action":"waitFor","selector":"#loaded"}` 等待元素，`{"action":"waitForPage","path":"/pages/detail/index"}` 等待跳转 |
 | `state.expectPath`、`state.ready` | 最终路径默认等于 `path`。步骤会跳页时填写 `expectPath`；`ready` 应选择渲染完成后才出现的 WXML 元素，例如由 `wx:if` 控制的结果标签 |
 | `state.selectors` | 按绘制次序声明 `{id, kind, selector, name?, component?, children?}`。`kind` 为 `frame` 或 `text`；子节点在父元素内查找。文本逐字读取 `element.text()` |
-| `edges` | `{from, to, source}` 中 `from`、`to` 是状态 ID，`source` 是起点状态内声明的节点 ID。每个视口重新进入起点并实际点击该元素，核对终点路径、就绪标志、声明的文本、样式和框。相同起终外观、点击无效或结果不匹配均报错 |
+| `edges` | 默认的 `{from, to, source}` 中 `from`、`to` 是状态 ID，`source` 是起点状态内声明的节点 ID。每个视口点击声明的控件，核对终点路径、就绪标志、文本、样式和框。连续场景和按来源返回的配置见下文。 |
 | `timeoutMs` | 对入场条件和点击结果的轮询等待时间，默认 8000 毫秒 |
+
+## 按来源返回的连续回放
+
+在开发者工具中打开同一个 `native/example`，使用以下配置采集公开的合成目录。手动复验从 `pages/catalog/index` 开始。先点「白桦叶」再返回，然后点「只看叶片」并重复进入同一详情。第一次返回应看到鹅卵石，第二次返回应保留叶片筛选。
+
+```sh
+node native/capture.mjs native/return-context.json build/native-return
+node cli.mjs inspect build/native-return/bundle.json
+```
+
+`scenarios` 的每项用 `id` 命名任务，`entry` 指定起始状态，`steps` 按顺序列出当前状态内的控件 ID。采集器先采各状态的参考画板，再从每个任务入口连续点击。中间步骤和返回后的页面都从运行时读回。可选的 `state.expectContext` 声明需要比对的顶层页面数据字段和预期标量值，例如 `{"filter":"leaves"}`。`state.data` 用于准备参考或入口，`expectContext` 只用于读回断言。
+
+| 场景中的边 | 点击后的断言 |
+| --- | --- |
+| `NAVIGATE`（默认） | 原生栈保留来源页并压入一页，目标匹配声明的 `to`。 |
+| `NAVIGATE` 带 `samePage: true` | 当前页面实例和栈深保持一致，画板切换到 `to`。适用于列表筛选等页内动作。 |
+| `BACK` | 省略 `to`。必须在连续场景内点击，原生栈弹出一页，恢复同一来源页实例及其画板和上下文。 |
+
+旧配置中的独立 `NAVIGATE` 仍逐边回放。示例有三块画板、五条控件连线；详情的返回控件在每个视口只导出一条 Figma `BACK`。`evidence.json` 的 `scenarios[].steps` 分别记录每次实际通过的来源、控件、动作、目标状态和核对的字段名。任一步失败会终止整批输出。`node --test native/return-context.test.mjs` 可运行合成合同回归，模拟器和 Figma Present 的实测需要各自的回放记录。
 
 选择器使用自动化 API 支持的 WXSS 选择器子集。每段必须匹配一个元素。跨自定义组件时可写 `["#card-component", ".caption"]`，先从页面定位宿主，再从宿主内部定位文字。节点 ID 在同一状态内唯一，视口和状态名支持字母、数字、下划线和单连字符。最终节点 ID 例如 `phone/closed#toggle`。
 

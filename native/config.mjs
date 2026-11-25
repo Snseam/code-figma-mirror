@@ -20,7 +20,7 @@ function entries(items, label) {
   return items;
 }
 
-export function validateConfig(config) {
+export function prepareConfig(config) {
   check(object(config) && name(config.project), 'project name required');
   check(config.timeoutMs === undefined || (Number.isSafeInteger(config.timeoutMs) && config.timeoutMs > 0),
     'timeoutMs must be a positive integer');
@@ -37,6 +37,12 @@ export function validateConfig(config) {
     check(route(state.path) && state.url === undefined, `${state.id} needs a native Mini Program path`);
     check(state.expectPath === undefined || route(state.expectPath), `${state.id}.expectPath`);
     check(state.data === undefined || object(state.data), `${state.id}.data must be an object`);
+    if (state.expectContext !== undefined) {
+      check(object(state.expectContext) && Object.entries(state.expectContext).every(([field, value]) =>
+        /^[A-Za-z_]\w*$/.test(field) && !Object.hasOwn(Object.prototype, field) &&
+        (value === null || ['string', 'boolean'].includes(typeof value) || Number.isFinite(value))),
+      `${state.id}.expectContext needs top-level fields with scalar values`);
+    }
     check(state.ready === undefined || selector(state.ready), `${state.id}.ready needs a WXML selector`);
     check(state.steps === undefined || Array.isArray(state.steps), `${state.id}.steps must be an array`);
     for (const step of state.steps ?? []) {
@@ -63,15 +69,48 @@ export function validateConfig(config) {
     visit(state.selectors, []);
     nodesByState.set(state.id, ids);
   }
-  const actions = new Set();
+  const actions = new Map();
   check(config.edges === undefined || Array.isArray(config.edges), 'edges must be an array');
   for (const edge of config.edges ?? []) {
-    check(object(edge) && nodesByState.get(edge.from)?.has(edge.source) && nodesByState.has(edge.to),
-      'edge must reference two states and a declared source node ID');
-    check(edge.action === undefined || edge.action === 'NAVIGATE', 'only NAVIGATE edges are supported');
+    check(object(edge) && nodesByState.get(edge.from)?.has(edge.source), 'edge must reference a declared source node ID');
+    check(edge.action === undefined || ['NAVIGATE', 'BACK'].includes(edge.action), 'unsupported edge action');
+    check(edge.action === 'BACK' ? edge.to == null : nodesByState.has(edge.to), `invalid destination for ${edge.from}/${edge.source}`);
+    check(edge.samePage === undefined || (typeof edge.samePage === 'boolean' && edge.action !== 'BACK'),
+      `${edge.from}/${edge.source}: samePage applies to NAVIGATE`);
     const key = JSON.stringify([edge.from, edge.source]);
     check(!actions.has(key), `multiple edges share ${edge.from}/${edge.source}`);
-    actions.add(key);
+    actions.set(key, edge);
   }
-  return nodesByState;
+  const independent = new Set(actions.values());
+  const scenarios = [];
+  if (config.scenarios !== undefined) {
+    for (const scenario of entries(config.scenarios, 'scenarios')) {
+      check(nodesByState.has(scenario.entry), `${scenario.id}: unknown entry state`);
+      check(Array.isArray(scenario.steps) && scenario.steps.length, `${scenario.id}: expected control IDs in steps`);
+      const history = [scenario.entry];
+      const steps = [];
+      for (const source of scenario.steps) {
+        const from = history.at(-1);
+        const edge = actions.get(JSON.stringify([from, source]));
+        check(edge, `${scenario.id}: no edge for ${from}/${source}`);
+        if (edge.action === 'BACK') {
+          check(history.length > 1, `${scenario.id}: BACK at entry state ${from}`);
+          history.pop();
+        } else if (edge.samePage) {
+          history[history.length - 1] = edge.to;
+        } else {
+          history.push(edge.to);
+        }
+        steps.push({ edge, expected: history.at(-1) });
+        independent.delete(edge);
+      }
+      scenarios.push({ id: scenario.id, entry: scenario.entry, steps });
+    }
+  }
+  for (const edge of independent) check(edge.action !== 'BACK', `${edge.from}/${edge.source}: BACK requires a scenario`);
+  return { selectors: nodesByState, independent, scenarios };
+}
+
+export function validateConfig(config) {
+  return prepareConfig(config).selectors;
 }

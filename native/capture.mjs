@@ -4,7 +4,7 @@ import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
-import { validateConfig } from './config.mjs';
+import { prepareConfig } from './config.mjs';
 import { locate, measureNodes, MissingNode, screenshotSpace } from './measure.mjs';
 
 async function until(probe, description, timeout) {
@@ -29,6 +29,9 @@ async function observedPage(program, state) {
   const page = await program.currentPage();
   if (!onRoute(page, state.expectPath ?? state.path)) return null;
   if (state.ready && !await locate(page, state.ready)) return null;
+  for (const [field, expected] of Object.entries(state.expectContext ?? {})) {
+    if (await page.data(field) !== expected) return null;
+  }
   return page;
 }
 
@@ -93,7 +96,7 @@ async function matchesCapture(program, state, { board, space }) {
   }
 }
 
-async function captureViewport(sdk, viewport, config, selectors, stage, bundle, evidence) {
+async function captureViewport(sdk, viewport, config, plan, stage, bundle, evidence) {
   let program;
   try {
     program = await sdk.connect({ wsEndpoint: viewport.wsEndpoint });
@@ -116,20 +119,48 @@ async function captureViewport(sdk, viewport, config, selectors, stage, bundle, 
       }
     }
     const states = new Map(config.states.map(state => [state.id, state]));
-    for (const edge of config.edges ?? []) {
+    async function replay(edge, expected, stacked) {
       const from = `${viewport.id}/${edge.from}`;
-      const target = states.get(edge.to);
+      const target = states.get(expected);
       const origin = states.get(edge.from);
-      await enter(program, origin, timeout);
       await until(() => matchesCapture(program, origin, snapshots.get(edge.from)), `edge source ${from}`, timeout);
-      if (await matchesCapture(program, target, snapshots.get(edge.to))) {
-        throw new Error(`${from} -> ${edge.to}: target already matches before the tap`);
+      if ((!stacked || edge.samePage) && await matchesCapture(program, target, snapshots.get(expected))) {
+        throw new Error(`${from} -> ${expected}: target already matches before the tap`);
       }
-      const source = await locate(await program.currentPage(), selectors.get(edge.from).get(edge.source));
+      const before = stacked || edge.samePage ? await program.pageStack() : null;
+      const source = await locate(await program.currentPage(), plan.selectors.get(edge.from).get(edge.source));
       if (!source) throw new Error(`${from}: edge source ${edge.source} missing during replay`);
       await source.tap();
-      await until(() => matchesCapture(program, target, snapshots.get(edge.to)), `edge ${from}#${edge.source} -> ${edge.to}`, timeout);
-      bundle.edges.push({ from, to: `${viewport.id}/${edge.to}`, source: `${from}#${edge.source}`, action: 'NAVIGATE' });
+      await until(async () => {
+        if (before) {
+          const after = await program.pageStack();
+          const back = edge.action === 'BACK';
+          const retained = back ? before.slice(0, -1) : before;
+          const expectedDepth = edge.samePage ? before.length : before.length + (back ? -1 : 1);
+          if (!after.length || after.length !== expectedDepth ||
+              !retained.every((page, index) => page === after[index])) return false;
+        }
+        return matchesCapture(program, target, snapshots.get(expected));
+      }, `edge ${from}#${edge.source} -> ${expected}`, timeout);
+    }
+    for (const edge of plan.independent) {
+      await enter(program, states.get(edge.from), timeout);
+      await replay(edge, edge.to, false);
+    }
+    for (const scenario of plan.scenarios) {
+      await enter(program, states.get(scenario.entry), timeout);
+      const steps = [];
+      for (const { edge, expected } of scenario.steps) {
+        await replay(edge, expected, true);
+        steps.push({ from: edge.from, source: edge.source, action: edge.action ?? 'NAVIGATE', to: expected,
+          checkedFields: Object.keys(states.get(expected).expectContext ?? {}) });
+      }
+      evidence.scenarios.push({ viewport: viewport.id, id: scenario.id, entry: scenario.entry, steps });
+    }
+    for (const edge of config.edges ?? []) {
+      const from = `${viewport.id}/${edge.from}`;
+      bundle.edges.push({ from, to: edge.action === 'BACK' ? null : `${viewport.id}/${edge.to}`,
+        source: `${from}#${edge.source}`, action: edge.action ?? 'NAVIGATE' });
     }
   } finally {
     program.disconnect();
@@ -146,7 +177,7 @@ async function officialSdk() {
 }
 
 async function run(config, output, loadSdk, source) {
-  const selectors = validateConfig(config);
+  const plan = prepareConfig(config);
   const destination = path.resolve(output);
   const existing = await lstat(destination).catch(error => {
     if (error.code !== 'ENOENT') throw error;
@@ -160,13 +191,14 @@ async function run(config, output, loadSdk, source) {
       'Source: WeChat DevTools native Mini Program simulator.'
   ] };
   const evidence = { source, boards: [] };
+  if (plan.scenarios.length) evidence.scenarios = [];
   const parent = path.dirname(destination);
   await mkdir(parent, { recursive: true });
   const stage = await mkdtemp(path.join(parent, '.wx-capture-'));
   try {
     await mkdir(path.join(stage, 'source'));
     for (const viewport of config.viewports) {
-      await captureViewport(sdk, viewport, config, selectors, stage, bundle, evidence);
+      await captureViewport(sdk, viewport, config, plan, stage, bundle, evidence);
     }
     for (const [file, data] of [['bundle.json', bundle], ['evidence.json', evidence]]) {
       await writeFile(path.join(stage, file), JSON.stringify(data, null, 2) + '\n');

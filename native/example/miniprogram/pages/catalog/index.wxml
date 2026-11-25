@@ -1,0 +1,9 @@
+<view>
+  <button id="filter" bindtap="toggleFilter">
+    <text id="filter-label">{{filter === 'all' ? '只看叶片' : '显示全部'}}</text>
+  </button>
+  <navigator id="open" url="/pages/leaf/index">
+    <text id="leaf-title">白桦叶</text>
+  </navigator>
+  <view wx:if="{{filter === 'all'}}"><text id="stone">鹅卵石</text></view>
+</view>

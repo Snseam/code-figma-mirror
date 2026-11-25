@@ -1,0 +1,52 @@
+{
+  "project": "观察卡目录",
+  "viewports": [{ "id": "phone", "wsEndpoint": "ws://127.0.0.1:9420" }],
+  "states": [
+    {
+      "id": "all", "path": "/pages/catalog/index", "ready": "#stone",
+      "expectContext": { "filter": "all" },
+      "selectors": [
+        { "id": "filter", "kind": "frame", "selector": "#filter", "children": [
+          { "id": "filter-label", "kind": "text", "selector": "#filter-label" }
+        ] },
+        { "id": "open", "kind": "frame", "selector": "#open", "children": [
+          { "id": "leaf-title", "kind": "text", "selector": "#leaf-title" }
+        ] },
+        { "id": "stone", "kind": "text", "selector": "#stone" }
+      ]
+    },
+    {
+      "id": "leaves", "path": "/pages/catalog/index", "ready": "#open",
+      "steps": [{ "action": "tap", "selector": "#filter" }],
+      "expectContext": { "filter": "leaves" },
+      "selectors": [
+        { "id": "filter", "kind": "frame", "selector": "#filter", "children": [
+          { "id": "filter-label", "kind": "text", "selector": "#filter-label" }
+        ] },
+        { "id": "open", "kind": "frame", "selector": "#open", "children": [
+          { "id": "leaf-title", "kind": "text", "selector": "#leaf-title" }
+        ] }
+      ]
+    },
+    {
+      "id": "detail", "path": "/pages/leaf/index", "ready": "#back",
+      "selectors": [
+        { "id": "description", "kind": "text", "selector": "#description" },
+        { "id": "back", "kind": "frame", "selector": "#back", "children": [
+          { "id": "back-label", "kind": "text", "selector": "#back-label" }
+        ] }
+      ]
+    }
+  ],
+  "edges": [
+    { "from": "all", "source": "filter", "to": "leaves", "samePage": true },
+    { "from": "leaves", "source": "filter", "to": "all", "samePage": true },
+    { "from": "all", "source": "open", "to": "detail" },
+    { "from": "leaves", "source": "open", "to": "detail" },
+    { "from": "detail", "source": "back", "action": "BACK" }
+  ],
+  "scenarios": [
+    { "id": "from-all", "entry": "all", "steps": ["open", "back"] },
+    { "id": "from-leaves", "entry": "all", "steps": ["filter", "open", "back"] }
+  ]
+}

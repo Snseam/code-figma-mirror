@@ -1,4 +1,4 @@
 {
-  "pages": ["pages/sample/index"],
+  "pages": ["pages/sample/index", "pages/catalog/index", "pages/leaf/index"],
   "window": { "navigationBarTitleText": "观察卡" }
 }
