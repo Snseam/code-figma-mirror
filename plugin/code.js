@@ -395,7 +395,11 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
   }
   function localShape(spec) {
     const value = Object.assign({}, spec);
-    for (const field of ["id", "text", "name", "x", "y", "width", "height"]) delete value[field];
+    for (const field of ["id", "stableId", "identity", "logicalId", "text", "name", "x", "y", "width", "height"]) delete value[field];
+    if (value.style && value.style.tokenRefs) {
+      value.style = Object.assign({}, value.style);
+      delete value.style.tokenRefs;
+    }
     value.children = (spec.children || []).map(localShape);
     return value;
   }

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
-import { collectDOM, cropViewport, stateFingerprint } from './capture-dom.mjs';
+import { collectDOM, cropViewport, stateFingerprint, traceTokenRefs } from './capture-dom.mjs';
 
 const actionTimeout = 8000;
 const matchTimeout = 3500;
@@ -235,6 +235,22 @@ async function readBoard(page, config, viewport, state, id, ready, images, stage
         throw Error(`Raster font mismatch at ${selector}: ${JSON.stringify(fonts)}`);
       }
     }
+  }
+  if (dom.tokenSites.length) {
+    const refs = await page.evaluate(traceTokenRefs, {
+      sites: dom.tokenSites, variables: config.tokens, tokens: dom.tokens
+    });
+    const byId = new Map();
+    for (const [id, field, name] of refs) {
+      if (!byId.has(id)) byId.set(id, {});
+      byId.get(id)[field] = name;
+    }
+    function attachRefs(node) {
+      const refs = byId.get(node.id);
+      if (refs && Object.keys(refs).every(field => node.style[field])) node.style.tokenRefs = refs;
+      node.children?.forEach(attachRefs);
+    }
+    board.children.forEach(attachRefs);
   }
   return {
     board,

@@ -60,11 +60,20 @@ node cli.mjs verify build/inbox build/figma build/visual
 ```sh
 node cli.mjs capture <scenarios.json> <capture-dir> [--font-evidence] [--raster-profile <profile.json>]
 node cli.mjs inspect <bundle.json>
+node cli.mjs plan <base-bundle.json> <next-bundle.json> -o <patch-plan.json>
 node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1]
 node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01]
 node cli.mjs review <base.json> <current.json> <figma-snapshot.json> <out-dir> [--css theme.css] [--scenarios scenarios.json]
 node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out-dir> --css theme.css --mappings mappings.json
 ```
+
+### Previewing an incremental update
+
+Run `plan` on two captures of the same project and raster profile. The JSON lists token, local component/variant, board, subtree and prototype changes. `dirtyBoards` includes surviving boards affected through shared components or paints. An insert points to the incoming bundle; `index` is the final sibling position. `remappedIds` connects changed capture paths within a board. The plan is an offline preview for issue #4. Applying it to a Figma canvas and checking live designer edits are later stages.
+
+Give repeated items a sibling-unique `data-mirror-id` containing the business key. The Web collector also records unique HTML IDs, source keys from the React/Vue host probes, and tag/role/class hints. Native captures use the configured WXML rule ID. The planner groups the measured lines of a DOM text node, including lines in older v1 bundles. For ambiguous siblings the CLI writes `ambiguities` and exits with status 2. Supply explicit keys on both sides when a mapping matters.
+
+After taking the reference PNG, capture probes the configured root color variables with two temporary palettes in the disposable page. It records a `style.tokenRefs` entry under the configured token name when the measured paint follows the same variable both times. Local overrides and literal paints retain their measured values. Paints without a proven reference use a conservative color match for impact estimation.
 
 ## Verified benchmark & boundaries
 

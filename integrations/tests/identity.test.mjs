@@ -37,7 +37,7 @@ for (const framework of ['react', 'vue']) {
       const marked = [...html.matchAll(/<([a-z]+)\b[^>]*?\bdata-component="([^"]+)"/g)]
         .map(match => [match[1], match[2]]);
       assert.deepEqual(marked, [['main', 'Inbox'], ['article', 'MessageRow'], ['small', 'Authored'], ['aside', 'Caller']]);
-      assert.match(html, /<article data-component="MessageRow"><span>Draft<\/span><\/article>/);
+      assert.match(html, /<article data-component="MessageRow" data-mirror-key="[^"]+:MessageRow:root"><span>Draft<\/span><\/article>/);
       assert.match(html, /<button>Open<\/button><button>Archive<\/button>/);
       assert.deepEqual(await fixtureSources(root), before);
     } finally {
@@ -127,4 +127,19 @@ test('React leaves locally invoked render helpers and anonymous HOC callback JSX
   assert.match(code, /<em\s*\/>/);
   assert.match(code, /<td\s*\/>/);
   assert.match(code, /<nav\s*\/>/);
+});
+
+test('conditional host keys survive an earlier sibling insertion and preserve authored keys', async () => {
+  for (const prefix of ['', '<aside/>']) {
+    const jsx = `function View(props) { return <main>${prefix}{props.ready ? <p/> : <p data-mirror-key="manual"/>}</main> }`;
+    const react = await transformAsync(jsx, { filename: 'View.jsx', configFile: false, babelrc: false, plugins: [componentIdentity] });
+    assert.match(react.code, /data-mirror-key="View.jsx:View:root\/props.ready\/consequent"/);
+    assert.equal(react.code.match(/data-mirror-key=/g).length, 3);
+    const vue = compileTemplate({ filename: 'View.vue', id: 'fixture',
+      source: `<main>${prefix}<p v-if="ready"/><p v-else :data-mirror-key="manual"/></main>`,
+      compilerOptions: { nodeTransforms: vueComponentIdentity().nodeTransforms } });
+    assert.deepEqual(vue.errors, []);
+    assert.match(vue.code, /View.vue:View:root\/ready\/if/);
+    assert.doesNotMatch(vue.code, /ready\/else/);
+  }
 });

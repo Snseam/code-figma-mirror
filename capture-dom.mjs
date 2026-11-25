@@ -140,8 +140,9 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
       if (css.textTransform === 'uppercase') value = value.toLocaleUpperCase();
       if (css.textTransform === 'lowercase') value = value.toLocaleLowerCase();
       if (!value) return;
-      result.push({ id: `${boardId}#${key}@${offset}`, name: value.trim().slice(0, 64) || 'Space',
+      result.push({ id: `${boardId}#${key}@${offset}`, logicalId: `${boardId}#${key}`, name: value.trim().slice(0, 64) || 'Space',
         kind: 'text', ...bounds(rect, parent), text: value, style: textStyle(css) });
+      recordPaint(result.at(-1), 'color', key.slice(0, key.lastIndexOf('/text-')), 'color');
     }
     if (range.getClientRects().length === 1) {
       emit(text.data, range.getBoundingClientRect(), 0);
@@ -242,6 +243,11 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
     else if (value) warnings.add(`Non-color root token ${name} (${variable}) was omitted.`);
     else warnings.add(`Missing root token ${name} (${variable}).`);
   }
+  const tokenColors = new Set(tokenEntries.map(([, value]) => value));
+  const tokenSites = [];
+  function recordPaint(node, field, selector, property) {
+    if (tokenColors.has(node.style[field])) tokenSites.push({ id: node.id, field, selector, property, value: node.style[field] });
+  }
   const metadata = new Map();
   for (const rule of components) {
     for (const element of document.querySelectorAll(rule.selector)) {
@@ -256,7 +262,8 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
     if (['script', 'style', 'template', 'head', 'noscript', 'link', 'meta'].includes(tag)) return [];
     const css = getComputedStyle(element);
     if (css.display === 'none' || Number(css.opacity) === 0) return [];
-    if (element.id && document.querySelectorAll(`#${CSS.escape(element.id)}`).length === 1) path = `#${CSS.escape(element.id)}`;
+    const uniqueId = element.id && document.querySelectorAll(`#${CSS.escape(element.id)}`).length === 1;
+    if (uniqueId) path = `#${CSS.escape(element.id)}`;
     const isRoot = element === document.documentElement;
     const rect = isRoot ? viewport : element.getBoundingClientRect();
     const visible = intersect(rect, clip);
@@ -273,6 +280,13 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
         .find(value => value?.trim());
       node = { id, name, kind: 'frame', ...bounds(rect, parentRect), style: frameStyle(css, rect),
         ...(component && { component }), ...(variant && { variant }), ...(figmaKey && { figmaKey }) };
+      if (element.dataset.mirrorId) node.stableId = `business:${element.dataset.mirrorId}`;
+      else if (uniqueId) node.stableId = `dom:${path.slice(1)}`;
+      else if (isRoot) node.stableId = 'document';
+      node.identity = { tag };
+      if (element.dataset.mirrorKey) node.identity.source = element.dataset.mirrorKey;
+      if (element.hasAttribute('role')) node.identity.role = element.getAttribute('role');
+      if (element.classList.length) node.identity.classes = [...element.classList].sort();
       exported.set(element, { id, path });
       if (isRoot && !node.style.fill) {
         node.style.fill = document.body && color(getComputedStyle(document.body).backgroundColor) || '#FFFFFF';
@@ -280,6 +294,12 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
       }
       if (element === document.body && rootFill?.length === 9 && rootFill.endsWith('00')) delete node.style.fill;
       if (isRoot) node.style.clip = true;
+      const bodyFill = isRoot && rootFill?.length === 9 && rootFill.endsWith('00');
+      recordPaint(node, 'fill', bodyFill ? 'body' : path, 'backgroundColor');
+      if (node.style.stroke) {
+        const side = ['Top', 'Right', 'Bottom', 'Left'].find(side => parseFloat(css[`border${side}Width`]) > 0);
+        recordPaint(node, 'stroke', path, `border${side}Color`);
+      }
       function raster(reason) {
         const left = Math.max(0, Math.floor(visible.left));
         const top = Math.max(0, Math.floor(visible.top));
@@ -377,7 +397,48 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
       if (matches.length === 1 && exported.has(matches[0])) sources.push([selector, exported.get(matches[0])]);
     } catch { warnings.add(`Invalid edge CSS selector ${selector}.`); }
   }
-  return { children, crops, sources, tokens: Object.fromEntries(tokenEntries), warnings: [...warnings] };
+  return { children, crops, sources, tokenSites, tokens: Object.fromEntries(tokenEntries), warnings: [...warnings] };
+}
+
+export function traceTokenRefs({ sites, variables, tokens }) {
+  if (!sites.length) return [];
+  const hosts = new Map();
+  for (const { selector } of sites) {
+    if (!hosts.has(selector)) hosts.set(selector, document.querySelector(selector));
+  }
+  const root = document.documentElement;
+  const original = root.getAttribute('style');
+  const byVariable = new Map();
+  for (const [name, variable] of Object.entries(variables)) {
+    if (typeof variable === 'string' && variable.startsWith('--') && Object.hasOwn(tokens, name)) {
+      byVariable.set(variable, byVariable.has(variable) ? null : name);
+    }
+  }
+  function probe(start) {
+    const palette = new Map();
+    let marker = start;
+    for (const [variable, name] of byVariable) {
+      const rgb = `rgb(${marker >> 16 & 255}, ${marker >> 8 & 255}, ${marker & 255})`;
+      root.style.setProperty(variable, rgb, 'important');
+      palette.set(rgb, name);
+      marker++;
+    }
+    return sites.map(({ selector, property }) => {
+      const host = hosts.get(selector);
+      return host ? palette.get(getComputedStyle(host)[property]) : null;
+    });
+  }
+  try {
+    const first = probe(0x163829);
+    const second = probe(0xa48273);
+    return sites.flatMap(({ id, field, value }, index) => {
+      const name = first[index];
+      return name && name === second[index] && tokens[name] === value ? [[id, field, name]] : [];
+    });
+  } finally {
+    if (original === null) root.removeAttribute('style');
+    else root.setAttribute('style', original);
+  }
 }
 
 export async function cropViewport({ screenshot, crops }) {

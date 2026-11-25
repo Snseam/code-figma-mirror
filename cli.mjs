@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, mkdtemp, realpath, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
 const usage = `node cli.mjs capture <scenarios.json> <capture-dir> [--font-evidence] [--raster-profile <profile.json>]
 node cli.mjs inspect <bundle.json>
+node cli.mjs plan <base-bundle.json> <next-bundle.json> -o <patch-plan.json>
 node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1]
 node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01]
 node cli.mjs review <base.json> <current.json> <figma-snapshot.json> <out-dir> [--css theme.css] [--scenarios scenarios.json]
@@ -77,12 +78,34 @@ async function main() {
   const { positionals, values } = parseArgs({ args, allowPositionals: true, options: {
     'pixel-tolerance': { type: 'string' }, 'max-diff-ratio': { type: 'string' }, 'font-evidence': { type: 'boolean' },
     'geometry-tolerance': { type: 'string' }, 'raster-profile': { type: 'string' },
-    css: { type: 'string' }, scenarios: { type: 'string' }, mappings: { type: 'string' }
+    css: { type: 'string' }, scenarios: { type: 'string' }, mappings: { type: 'string' },
+    output: { type: 'string', short: 'o' }
   } });
-  const arity = { capture: 2, inspect: 1, verify: 3, review: 4, 'review-styles': 4, audit: 3 };
+  const arity = { capture: 2, inspect: 1, plan: 2, verify: 3, review: 4, 'review-styles': 4, audit: 3 };
   if (positionals.length !== arity[command]) throw new Error(usage);
   const [first, second, third, fourth] = positionals;
   if (command === 'inspect') return console.log(JSON.stringify(inventory(await readJson(first)), null, 2));
+  if (command === 'plan') {
+    if (!values.output) throw Error('plan requires -o <patch-plan.json>');
+    const output = path.resolve(values.output);
+    const inputs = await Promise.all([first, second].map(file => realpath(file)));
+    const existing = await realpath(output).catch(error => {
+      if (error.code !== 'ENOENT') throw error;
+    });
+    if (inputs.includes(existing)) throw Error('Plan output must differ from input files');
+    const { planUpdate } = await import('./plan-update.mjs');
+    const result = planUpdate(...await Promise.all([first, second].map(readJson)));
+    await mkdir(path.dirname(output), { recursive: true });
+    const stage = await mkdtemp(path.join(path.dirname(output), '.plan-'));
+    try {
+      const file = path.join(stage, 'plan.json');
+      await writeFile(file, JSON.stringify(result, null, 2) + '\n');
+      await rename(file, output);
+    } finally { await rm(stage, { recursive: true, force: true }); }
+    console.log(`${result.dirtyBoards.length} affected boards · ${result.ambiguities.length} ambiguous sibling groups · ${output}`);
+    if (result.ambiguities.length) process.exitCode = 2;
+    return;
+  }
   if (command === 'capture') {
     const { capture } = await import('./capture.mjs');
     const config = await loadScenarios(first, values['raster-profile']);
