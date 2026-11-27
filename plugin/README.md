@@ -4,6 +4,8 @@
 
 ## 导入与重导
 
+公开演示在 Desktop 的 **Plugins → Development → Import plugin from manifest…** 直接选取当前工作树的 `plugin/manifest.json`。勾选 **创建新的基线版本，保留现有设计** 后导入，会从该包建立一个独立版本页。再次按默认方式导入同一包，会打开使用相同源文件的最新兼容版本。导入和导出应使用同一份开发插件。
+
 - `project` 是非空字符串。画板 `id` 在项目内唯一，节点 `id` 在所属画板内唯一，也须与画板自身的 ID 区分。节点的 `x/y` 相对于父节点，尺寸为正数。填充、描边、文字和变量接受 `#RRGGBB`、`#RRGGBBAA` 及短写。节点 `opacity` 单独生效。
 - `frame`、`text`、`svg` 和 `image` 对应可编辑容器、文字、矢量树和带图片填充的矩形。`data` 是 PNG 原始字节的 Base64，不带 data URL 前缀。`lineHeight` 和 `letterSpacing` 的单位为像素，字距支持负数。新导入的基准会记录字距，旧版本页继续按其原有字段比较。缺失资源记录在 `warnings` 中。
 - 单行 Range 紧框沿用采集宽高和坐标，在原节点及实例文字层上设置固定尺寸与垂直居中。v1 根据非空、无换行、框高 ≤ `1.35 × 字号 + 1px` 判断紧框。Arial 缺失时依次尝试 Arimo 同字形、Inter 同字形、Inter Regular；其他字体缺失时从 Inter 同字形开始。每次替代均将节点 ID、请求字体和实际字体写入 `warnings`。

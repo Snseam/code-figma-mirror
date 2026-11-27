@@ -1,0 +1,13 @@
+{
+  "designChanges": [
+    {
+      "scope": "token", "op": "update", "id": "primary",
+      "before": { "color": "#18181B" }, "after": { "color": "#2563EB" }
+    },
+    {
+      "scope": "node", "op": "update", "boardId": "desktop/open",
+      "id": "desktop/open##save-dialog/text-1@0",
+      "before": { "text": "Save changes" }, "after": { "text": "Save profile" }
+    }
+  ]
+}

@@ -27,7 +27,9 @@ try {
       { id: 'details', url, steps: [{ click: daySelector }, { click: `${settledPanel} ${timeSelector}` }], ready: `${settledPanel} form input[name=name]` }
     ],
     components: [
-      { selector: 'button[data-testid=day]', name: 'Calendar Day' },
+      { selector: 'button[data-testid=day][aria-pressed=true]', name: 'Calendar Day', variant: 'Selected' },
+      { selector: 'button[data-testid=day][data-disabled=true]', name: 'Calendar Day', variant: 'Disabled' },
+      { selector: 'button[data-testid=day]', name: 'Calendar Day', variant: 'Available' },
       { selector: 'button[data-testid=time]', name: 'Time Slot' }
     ],
     edges: [

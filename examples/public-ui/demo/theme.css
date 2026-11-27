@@ -1,0 +1,137 @@
+:root {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--muted);
+  color: var(--foreground);
+  font-family: Arimo, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.canvas-card {
+  width: 440px;
+  padding: 24px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 18px;
+  font-size: 1.125rem;
+  line-height: 24px;
+  font-weight: 700;
+  overflow-wrap: normal;
+}
+
+.card-desc {
+  margin: 0;
+  color: var(--muted-foreground);
+  width: fit-content;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  min-height: 36px;
+  padding-block: 8px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.btn-outline {
+  background: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 9, 11, 0.45);
+  display: none;
+  place-items: center;
+}
+
+.scrim[data-open="true"] {
+  display: grid;
+}
+
+.dialog-panel {
+  width: 420px;
+  padding: 24px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.field-value {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  color: var(--foreground);
+  background: var(--background);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

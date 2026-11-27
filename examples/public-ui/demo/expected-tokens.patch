@@ -1,0 +1,11 @@
+--- a/examples/public-ui/demo/theme.css
++++ b/examples/public-ui/demo/theme.css
+@@ -1,7 +1,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #09090b;
+-  --primary: #18181b;
++  --primary: #2563EB;
+   --primary-foreground: #fafafa;
+   --muted: #f4f4f5;
+   --muted-foreground: #71717a;

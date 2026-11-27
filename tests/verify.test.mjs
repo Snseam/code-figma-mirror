@@ -73,6 +73,54 @@ test('verify persists independent HTML, metrics, inputs, and a correctly oriente
   assert.equal((await fixture.run({ pixelTolerance: 1 })).boards[0].diffPixels, 0);
 });
 
+test('declared text and token edits are accepted only inside their measured regions', async context => {
+  const text = { id: 'button/text-1@0', kind: 'text', x: 0, y: 0, width: 1, height: 1, text: 'Save changes' };
+  const button = { id: 'button', kind: 'frame', x: 0, y: 0, width: 1, height: 1, style: { fill: '#18181B' }, children: [text] };
+  const fixture = await capture(context, [{ ...board('open', 1, 1), children: [button] }], {
+    tokens: { primary: '#18181B' },
+  });
+  await pair(fixture, 'desktop--open.png', png(1, 1, [0x18181bff]), png(1, 1, [0x2563ebff]));
+  const change = { scope: 'token', op: 'update', id: 'primary', after: { color: '#2563EB' } };
+  const result = await fixture.run({ maxDiffRatio: 0, expectedChanges: { designChanges: [change] } });
+  assert.equal(result.passed, true);
+  assert.deepEqual(result.boards[0].issues, []);
+  assert.equal(result.boards[0].plannedPixels, 1);
+  assert.equal(result.boards[0].diffPixels, 1);
+  assert.equal((await fixture.run({ maxDiffRatio: 0, expectedChanges: { designChanges: [] } })).passed, false);
+  assert.equal((await fixture.run({ maxDiffRatio: 1, expectedChanges: { designChanges: [] } })).boards[0].issues[0].code, 'unexpected-pixels');
+  const unchanged = path.join(fixture.root, 'unchanged');
+  await mkdir(unchanged);
+  await writeFile(path.join(unchanged, 'desktop--open.png'), png(1, 1, [0x18181bff]));
+  const missing = await verify(fixture.root, unchanged, path.join(fixture.root, 'missing'), { maxDiffRatio: 0, expectedChanges: { designChanges: [change] } });
+  assert.equal(missing.boards[0].issues[0].code, 'missing-expected-pixels');
+
+  const textFixture = await capture(context, [{ ...board('open', 2, 1), children: [
+    { id: 'label', kind: 'text', x: 0, y: 0, width: 1, height: 1, text: 'Save changes' },
+  ] }]);
+  await pair(textFixture, 'desktop--open.png', png(2, 1, [0xffffffff, 0xffffffff]), png(2, 1, [0x000000ff, 0xffffffff]));
+  const textChange = { scope: 'node', op: 'update', boardId: 'desktop/open', id: 'label', before: { text: 'Save changes' }, after: { text: 'Save profile' } };
+  const textResult = await textFixture.run({ maxDiffRatio: 0, expectedChanges: { designChanges: [textChange] } });
+  assert.equal(textResult.passed, true);
+  assert.deepEqual(textResult.boards[0].issues, []);
+});
+
+test('edit verification uses actual baseline pixels and rejects a partially recolored button', async context => {
+  const name = 'desktop--open.png';
+  const button = { id: 'button', kind: 'frame', x: 0, y: 0, width: 2, height: 1, style: { fill: '#18181B' } };
+  const fixture = await capture(context, [{ ...board('open', 3, 1), children: [button] }], { tokens: { primary: '#18181B' } });
+  const baselineDir = path.join(fixture.root, 'original');
+  await mkdir(baselineDir);
+  await writeFile(path.join(baselineDir, 'design-diff.json'), JSON.stringify({ boards: [{ id: 'desktop/open', file: name }] }));
+  await writeFile(path.join(baselineDir, name), png(3, 1, [0x18181bff, 0x18181bff, 0xffffffff]));
+  const options = { baselineDir, expectedChanges: { designChanges: [{ scope: 'token', op: 'update', id: 'primary', after: { color: '#2563EB' } }] } };
+  await pair(fixture, name, png(3, 1, [0, 0, 0]), png(3, 1, [0x2563ebff, 0x18181bff, 0xffffffff]));
+  assert.equal((await fixture.run(options)).boards[0].issues[0].code, 'wrong-token-color');
+  await writeFile(path.join(fixture.figma, name), png(3, 1, [0x2563ebff, 0x2563ebff, 0xffffffff]));
+  assert.equal((await fixture.run(options)).passed, true);
+  await writeFile(path.join(fixture.figma, name), png(3, 1, [0x2563ebff, 0x2563ebff, 0x000000ff]));
+  assert.equal((await fixture.run(options)).boards[0].issues[0].code, 'unexpected-pixels');
+});
+
 test('a controlled font reference is labeled in the HTML and preserved in JSON', async context => {
   const rasterProfile = { name: 'Arimo <fixture>', fontFamily: 'Arimo', smoothing: 'antialiased', sha256: 'a'.repeat(64) };
   const fixture = await capture(context, [board()], { rasterProfile });

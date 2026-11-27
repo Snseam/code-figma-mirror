@@ -75,7 +75,7 @@ test("ZIP STORE emits UTF-8 names, correct CRC and central directory offsets", a
   assert.equal(central, end);
 });
 
-function testApi({ boundsHeader = false } = {}) {
+function testApi({ boundsHeader = false, measureWidth } = {}) {
   let serial = 0;
   const nodes = new Map();
   const blockedGeometry = [];
@@ -99,6 +99,14 @@ function testApi({ boundsHeader = false } = {}) {
             children: item.children && item.children.map(json)
           });
           return { document: json(this) };
+        }
+        if (settings.format === "SVG_STRING") {
+          const lines = String(this.characters || "").split(/\r?\n/);
+          const tspans = lines.map((line, index) => {
+            const safe = line.replace(/[&<>]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[ch]);
+            return `<tspan x="0" y="${12 + index * 16}">${safe}</tspan>`;
+          }).join("");
+          return `<svg><text>${tspans}</text></svg>`;
         }
         assert.equal(settings.format, "PNG");
         if (boundsHeader) {
@@ -128,14 +136,43 @@ function testApi({ boundsHeader = false } = {}) {
         child.parent = this;
       }
     });
-    if (type === "COMPONENT") node.createInstance = () => {
+    if (type === "TEXT" && measureWidth) {
+      let mode = node.textAutoResize;
+      Object.defineProperty(node, "textAutoResize", {
+        get: () => mode,
+        set(value) {
+          mode = value;
+          const natural = measureWidth(node.characters);
+          if (value === "HEIGHT") node.height = node.width < natural ? 32 : 16;
+          if (value === "WIDTH_AND_HEIGHT") node.resize(natural, 16);
+        }
+      });
+    }
+    if (type === "COMPONENT") {
+      node.componentPropertyDefinitions = {};
+      node.addComponentProperty = (name, propType, defaultValue) => {
+        const key = `${name}#${Object.keys(node.componentPropertyDefinitions).length}:0`;
+        node.componentPropertyDefinitions[key] = { type: propType, defaultValue };
+        return key;
+      };
+      node.createInstance = () => {
       const instance = scene("INSTANCE", api.currentPage);
       instance.componentProperties = {};
+      for (const [key, def] of Object.entries(node.componentPropertyDefinitions)) {
+        instance.componentProperties[key] = { type: def.type, value: def.defaultValue };
+      }
+      instance.setProperties = props => {
+        for (const [key, value] of Object.entries(props)) {
+          if (instance.componentProperties[key]) {
+            instance.componentProperties[key] = { ...instance.componentProperties[key], value };
+          }
+        }
+      };
       instance.getMainComponentAsync = async () => node;
       Object.assign(instance, { width: node.width, height: node.height, fills: node.fills, strokes: node.strokes });
       function cloneLayer(source, parent) {
         const copy = scene(source.type, parent);
-        for (const field of ["name", "x", "y", "width", "height", "visible", "constraints", "fills", "strokes", "characters", "fontName", "fontSize", "lineHeight", "letterSpacing", "textAutoResize", "textAlignVertical", "componentProperties", "getMainComponentAsync"]) {
+        for (const field of ["name", "x", "y", "width", "height", "visible", "constraints", "fills", "strokes", "characters", "fontName", "fontSize", "lineHeight", "letterSpacing", "textAutoResize", "textAlignVertical", "componentProperties", "componentPropertyReferences", "getMainComponentAsync"]) {
           if (field in source) copy[field] = source[field];
         }
         function rejectWrite(field) {
@@ -151,7 +188,8 @@ function testApi({ boundsHeader = false } = {}) {
       }
       for (const child of node.children) cloneLayer(child, instance);
       return instance;
-    };
+      };
+    }
     if (parent) parent.children.push(node);
     nodes.set(node.id, node);
     return node;
@@ -236,6 +274,65 @@ test("reimporting a pre-fix component page rebuilds once and preserves the desig
   assert.ok((await exportProject(api, () => {})).changes.some(change => change.after.name === "设计师原稿"));
   assert.equal((await importProject(api, fixture, "same-source")).reused, true);
   assert.equal(api.currentPage, page);
+});
+
+test("explicit fresh baseline keeps older edits and identical-source import reopens the latest revision", async () => {
+  const { api } = testApi();
+  await importProject(api, fixture, "same-source");
+  const original = api.currentPage;
+  original.children[0].name = "Edited frame";
+  const fresh = await importProject(api, fixture, "same-source", true);
+  assert.equal(fresh.revision, 2);
+  assert.equal((await exportProject(api, () => {})).changes.length, 0);
+  await api.setCurrentPageAsync(original);
+  assert.ok((await exportProject(api, () => {})).changes.length);
+  assert.equal((await importProject(api, fixture, "same-source")).revision, 2);
+});
+
+test("optional slots and paint overrides keep one master, preserve copy and export without edits", async () => {
+  const { api } = testApi();
+  const input = structuredClone(fixture);
+  const first = input.boards[0].children[0];
+  const second = input.boards[1].children[0];
+  second.style = { fill: "#FFDD00", radius: 3, opacity: 0.5 };
+  second.children.push({ ...second.children[0], id: "additional", text: "附加 Label", y: 24 });
+  await importProject(api, input, "slot-paints");
+  const instances = input.boards.map(board => api.currentPage.children.find(node => node.name === board.id).children[0]);
+  assert.equal(await instances[0].getMainComponentAsync(), await instances[1].getMainComponentAsync());
+  assert.deepEqual(instances.map(instance => instance.children.filter(layer => layer.visible).length), [1, 2]);
+  assert.equal(instances[1].opacity, 0.5);
+  assert.equal(instances[1].cornerRadius, 3);
+  assert.equal(instances[0].children.find(layer => layer.visible).characters, first.children[0].text);
+  const snapshot = await exportProject(api, () => {});
+  assert.deepEqual(snapshot.changes, []);
+  const { audit } = await import("../audit.mjs");
+  snapshot.observed.componentLinks[0].family = "Unrelated button";
+  assert.ok(audit(input, snapshot).issues.some(item => item.issue === "wrong-component-family-or-variant"));
+});
+
+test("only measured browser lines expand and keep their alignment anchor and clipping bounds", async () => {
+  const { api } = testApi({ measureWidth: () => 74 });
+  const input = structuredClone(fixture);
+  const board = input.boards[0];
+  input.boards = [board];
+  input.edges = [];
+  const line = { kind: "text", text: "Button", name: "Button", width: 72.875, height: 16, singleLine: true,
+    x: 10, y: 0, style: { fontSize: 14, align: "CENTER" } };
+  board.children = [
+    { ...line, id: "measured" },
+    { ...line, id: "already-fits", y: 30, width: 76 },
+    { ...line, id: "unknown", y: 60, singleLine: false },
+    { kind: "frame", name: "Clip", id: "clip", x: 10, y: 90, width: 72.875, height: 16, style: { clip: true },
+      children: [{ ...line, id: "no-room", x: 0 }] }
+  ];
+  await importProject(api, input, "measured-lines");
+  const snapshot = await exportProject(api, () => {});
+  const bounds = id => snapshot.observed.geometry.find(node => node.id === id);
+  assert.deepEqual([bounds("measured").x, bounds("measured").width], [9.4375, 74]);
+  assert.equal(bounds("already-fits").width, 76);
+  assert.equal(bounds("unknown").width, 72.875);
+  assert.equal(bounds("no-room").width, 72.875);
+  assert.deepEqual(snapshot.changes, []);
 });
 
 test("baseline chunks round-trip long Unicode text", () => {
@@ -358,9 +455,9 @@ test("observed reports live clicks, main component IDs, and parent-relative geom
     { boardId: "mobile/detail", id: "back", mainId }
   ]);
   assert.deepEqual(initial.geometry.find(row => row.boardId === "mobile/detail" && row.id === "label"),
-    { boardId: "mobile/detail", id: "label", x: 12, y: 8, width: 156, height: 24, type: "TEXT", text: "返回首页", parentId: "back" });
+    { boardId: "mobile/detail", id: "label", x: 12, y: 8, width: 156, height: 24, type: "TEXT", text: "返回首页", lineCount: 1, parentId: "back" });
   assert.deepEqual(initial.geometry.find(row => row.boardId === "mobile/home" && row.id === "label"),
-    { boardId: "mobile/home", id: "label", x: 12, y: 8, width: 103, height: 24, type: "TEXT", text: open.children[0].characters, parentId: "open" });
+    { boardId: "mobile/home", id: "label", x: 12, y: 8, width: 103, height: 24, type: "TEXT", text: open.children[0].characters, lineCount: 1, parentId: "open" });
   assert.equal(initial.geometry.find(row => row.id === "open").parentId, "mobile/home");
   assert.equal(Object.hasOwn(initial.geometry.find(row => row.id === "mobile/home"), "parentId"), false);
 

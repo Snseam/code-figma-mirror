@@ -102,6 +102,9 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
       }
     }
     if (Number(css.opacity) < 1) style.opacity = Number(css.opacity);
+    const blur = /^blur\(([\d.]+)px\)$/.exec(css.backdropFilter);
+    if (blur) style.backdropBlur = Number(blur[1]);
+    else if (css.backdropFilter && css.backdropFilter !== 'none') warnings.add(`Unsupported backdrop-filter: ${css.backdropFilter}`);
     if (css.overflowX !== 'visible' || css.overflowY !== 'visible') style.clip = true;
     return style;
   }
@@ -126,6 +129,7 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
       fontStyle: italic ? (face === 'Regular' ? 'Italic' : `${face} Italic`) : face,
       fontSize, ...(Number.isFinite(letterSpacing) ? { letterSpacing } : {}),
       ...(Number.isFinite(parseFloat(css.lineHeight)) ? { lineHeight: parseFloat(css.lineHeight) } : {}),
+      ...(Number.isFinite(weight) ? { fontWeight: weight } : {}),
       color: color(css.color), align: align.toUpperCase()
     };
   }
@@ -141,7 +145,7 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
       if (css.textTransform === 'lowercase') value = value.toLocaleLowerCase();
       if (!value) return;
       result.push({ id: `${boardId}#${key}@${offset}`, name: value.trim().slice(0, 64) || 'Space',
-        kind: 'text', ...bounds(rect, parent), text: value, style: textStyle(css) });
+        kind: 'text', ...bounds(rect, parent), singleLine: true, text: value, style: textStyle(css) });
     }
     if (range.getClientRects().length === 1) {
       emit(text.data, range.getBoundingClientRect(), 0);
@@ -251,12 +255,17 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
   const sources = [];
   const exported = new Map();
   const crops = [];
-  function visit(element, path, parentRect, clip) {
+  const topLayers = document.querySelectorAll('dialog:modal, :popover-open');
+  const topLayer = topLayers.length === 1 ? topLayers[0] : null;
+  if (topLayers.length > 1) warnings.add('Multiple top-layer elements retain approximate DOM stacking order.');
+  let topLayerPath;
+  function visit(element, path, parentRect, clip, lifted = false) {
     const tag = element.localName;
     if (['script', 'style', 'template', 'head', 'noscript', 'link', 'meta'].includes(tag)) return [];
     const css = getComputedStyle(element);
     if (css.display === 'none' || Number(css.opacity) === 0) return [];
     if (element.id && document.querySelectorAll(`#${CSS.escape(element.id)}`).length === 1) path = `#${CSS.escape(element.id)}`;
+    if (element === topLayer && !lifted) { topLayerPath = path; return []; }
     const isRoot = element === document.documentElement;
     const rect = isRoot ? viewport : element.getBoundingClientRect();
     const visible = intersect(rect, clip);
@@ -371,6 +380,17 @@ export function collectDOM({ boardId, components, tokenVariables, edgeSelectors,
     return [node];
   }
   const children = visit(document.documentElement, ':root', viewport, viewport);
+  if (topLayerPath) {
+    const backdrop = getComputedStyle(topLayer, '::backdrop');
+    if (backdrop.display !== 'none' && backdrop.visibility === 'visible') {
+      if (backdrop.position === 'fixed' && ['left', 'right', 'top', 'bottom'].every(side => backdrop[side] === '0px')
+        && backdrop.transform === 'none' && backdrop.backgroundImage === 'none') {
+        children.push({ id: `${boardId}#${topLayerPath}::backdrop`, name: '::backdrop', kind: 'frame',
+          ...bounds(viewport, viewport), style: frameStyle(backdrop, viewport), children: [] });
+      } else warnings.add(`${topLayerPath} has unsupported native backdrop geometry or paint.`);
+    }
+    children.push(...visit(topLayer, topLayerPath, viewport, viewport, true));
+  }
   for (const selector of edgeSelectors) {
     try {
       const matches = document.querySelectorAll(selector);

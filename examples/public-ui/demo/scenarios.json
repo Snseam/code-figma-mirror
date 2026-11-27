@@ -1,0 +1,27 @@
+{
+  "project": "public-ui-dialog-demo",
+  "rasterProfile": "../../inbox/raster-profile.json",
+  "viewports": [{ "id": "desktop", "width": 1024, "height": 720 }],
+  "states": [
+    { "id": "closed", "url": "./index.html", "ready": "#open-dialog" },
+    {
+      "id": "open",
+      "url": "./index.html",
+      "ready": "#profile-scrim[data-open='true']",
+      "steps": [{ "click": "#open-dialog" }]
+    }
+  ],
+  "edges": [
+    { "from": "closed", "to": "open", "selector": "#open-dialog" },
+    { "from": "open", "to": "closed", "selector": "#close-dialog" }
+  ],
+  "tokens": {
+    "background": "--background",
+    "foreground": "--foreground",
+    "primary": "--primary",
+    "primary-foreground": "--primary-foreground",
+    "muted": "--muted",
+    "muted-foreground": "--muted-foreground",
+    "border": "--border"
+  }
+}
