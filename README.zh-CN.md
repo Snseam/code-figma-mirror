@@ -29,6 +29,8 @@ Code Figma Mirror 是一个面向运行态前端应用的**确定性代码 ↔ F
 
 **本次实测条件为 1024 × 720、1× 导出。** Chromium 使用固定版本 Arimo 和灰度抗锯齿，Figma 导出无字体警告。两阶段均匹配 42 个图层、5 个实例、15 段文本的行数以及两条点击跳转。
 
+编辑后的 `Save profile` 按钮文案单独做像素校验。参考图取自已验收的 Figma 导出，裁切为 94 × 16 像素，随示例提供。复验沿用每通道 16/255 的容差。[查看文案参考图](examples/public-ui/demo/save-profile.1x.png)
+
 | 单通道超过 16/255 的像素 | 关闭画板 | 打开画板 | 验收结果 |
 | --- | ---: | ---: | --- |
 | Chromium 与编辑前 Figma | 1,849（0.251%） | 2,523（0.342%） | 均低于 1% |
@@ -95,8 +97,8 @@ node cli.mjs verify build/inbox build/figma build/visual
 ```sh
 node cli.mjs capture <scenarios.json> <capture-dir> [--font-evidence] [--raster-profile <profile.json>]
 node cli.mjs inspect <bundle.json>
-node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1]
-node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01]
+node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1] [--expected-changes <changes.json>]
+node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01] [--expected-changes <changes.json>]
 node cli.mjs review <base.json> <current.json> <figma-snapshot.json> <out-dir> [--css theme.css] [--scenarios scenarios.json]
 node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out-dir> --css theme.css --mappings mappings.json
 ```

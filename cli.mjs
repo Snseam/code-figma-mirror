@@ -104,7 +104,10 @@ async function main() {
     const options = {};
     if (values['pixel-tolerance'] !== undefined) options.pixelTolerance = Number(values['pixel-tolerance']);
     if (values['max-diff-ratio'] !== undefined) options.maxDiffRatio = Number(values['max-diff-ratio']);
-    if (values['expected-changes']) options.expectedChanges = await readJson(values['expected-changes']);
+    if (values['expected-changes']) {
+      options.expectedChanges = await readJson(values['expected-changes']);
+      options.expectedChangesDir = path.dirname(values['expected-changes']);
+    }
     const report = await verify(first, second, third, options);
     console.log(`${report.boards.filter(board => board.passed).length}/${report.boards.length} passed · ${path.resolve(third, 'report.html')}`);
     if (!report.passed) process.exitCode = 2;

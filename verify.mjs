@@ -1,6 +1,7 @@
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { PNG } from 'pngjs';
+import { expectedPixelMask, expectedRegions, pixelDistance } from './expected-pixels.mjs';
 import { perceptualMetrics, regionMetrics } from './visual-metrics.mjs';
 
 const asText = value => typeof value === 'string' ? value : JSON.stringify(value);
@@ -22,34 +23,18 @@ async function loadImage(file, side, issues) {
   }
 }
 
-function compare(source, figma, pixelTolerance, regions = []) {
+function compare(source, figma, pixelTolerance, expected) {
   const heat = new PNG({ width: source.width, height: source.height });
   let diffPixels = 0;
   let plannedPixels = 0;
-  const expected = new Uint8Array(source.width * source.height);
-  for (const region of regions) {
-    if (![region.left, region.top, region.right, region.bottom].every(Number.isSafeInteger) ||
-        region.left < 0 || region.top < 0 || region.right > source.width || region.bottom > source.height ||
-        region.left >= region.right || region.top >= region.bottom) throw Error('Invalid expected pixel region');
-    for (let y = region.top; y < region.bottom; y++) {
-      for (let x = region.left; x < region.right; x++) expected[y * source.width + x] = 1;
-    }
-  }
   for (let offset = 0; offset < source.data.length; offset += 4) {
-    const sourceAlpha = source.data[offset + 3];
-    const figmaAlpha = figma.data[offset + 3];
-    let delta = Math.abs(sourceAlpha - figmaAlpha);
-    for (let channel = 0; channel < 3; channel++) {
-      const distance = Math.abs(source.data[offset + channel] * sourceAlpha -
-        figma.data[offset + channel] * figmaAlpha) / 255;
-      delta = Math.max(delta, distance);
-    }
+    const delta = pixelDistance(source.data.readUInt32BE(offset), figma.data.readUInt32BE(offset));
     if (delta > pixelTolerance) {
       diffPixels++;
-      if (expected[offset / 4]) {
+      if (expected?.[offset / 4]) {
         plannedPixels++;
         heat.data.writeUInt32BE(0xd92052ff, offset);
-      } else heat.data.writeUInt32BE(regions.length ? 0x8b0000ff : 0xd92052ff, offset);
+      } else heat.data.writeUInt32BE(expected ? 0x8b0000ff : 0xd92052ff, offset);
     } else {
       heat.data.writeUInt32BE(0xf2f2f2ff, offset);
     }
@@ -57,59 +42,6 @@ function compare(source, figma, pixelTolerance, regions = []) {
   const totalPixels = source.width * source.height;
   return { heatPng: heat, plannedPixels, diffPixels, totalPixels, diffRatio: diffPixels / totalPixels };
 }
-
-function expectedRegions(bundle, manifest) {
-  const tokens = new Map();
-  for (const change of manifest?.designChanges ?? []) {
-    if (change.scope === 'token' && change.op === 'update') tokens.set(change.id, change.after?.color);
-  }
-  const text = new Map();
-  for (const board of bundle.boards) {
-    const visit = (node, parentX, parentY) => {
-      const x = parentX + node.x, y = parentY + node.y;
-      if (node.kind === 'text') text.set(node.id, { board, node, x, y });
-      for (const child of node.children ?? []) visit(child, x, y);
-    };
-    for (const child of board.children ?? []) visit(child, 0, 0);
-  }
-  const regions = new Map(bundle.boards.map(board => [board.id, []]));
-  function add(board, left, top, width, height, evidence) {
-    if (![left, top, width, height].every(Number.isFinite) || width <= 0 || height <= 0) throw Error('Invalid expected change bounds');
-    regions.get(board.id).push({ left: Math.floor(left), top: Math.floor(top), right: Math.ceil(left + width), bottom: Math.ceil(top + height), ...evidence });
-  }
-  for (const change of manifest?.designChanges ?? []) {
-    if (change.op !== 'update' || change.scope === 'token') continue;
-    for (const link of [{ boardId: change.boardId, id: change.id }, ...(change.propagatesTo ?? [])]) {
-      const found = text.get(link.id);
-      if (found?.board.id === link.boardId && found.node.text === change.before?.text && change.after?.text) {
-        add(found.board, found.x, found.y, found.node.width, found.node.height, { ink: found.node.style?.color });
-      }
-    }
-  }
-  for (const board of bundle.boards) {
-    function walk(node, parentX, parentY) {
-      const x = parentX + node.x, y = parentY + node.y;
-      const binding = Object.entries(bundle.tokens ?? {}).find(([name, value]) =>
-        tokens.has(name) && value?.toUpperCase() === node.style?.fill?.toUpperCase());
-      if (node.kind === 'frame' && binding) add(board, x, y, node.width, node.height, { from: binding[1], to: tokens.get(binding[0]) });
-      for (const child of node.children ?? []) walk(child, x, y);
-    }
-    for (const child of board.children ?? []) walk(child, 0, 0);
-  }
-  return regions;
-}
-
-function hasPixel(region, image, predicate) {
-  for (let y = Math.max(0, region.top); y < Math.min(image.height, region.bottom); y++) {
-    for (let x = Math.max(0, region.left); x < Math.min(image.width, region.right); x++) {
-      const offset = (y * image.width + x) * 4;
-      if (predicate(image.data.readUInt32BE(offset), offset)) return true;
-    }
-  }
-  return false;
-}
-
-const rgba = hex => Number.parseInt(hex.slice(1) + 'FF', 16);
 
 function summarizeCaptureIntegrity(integrity) {
   if (!integrity) return { status: 'unrecorded', pairedMatch: null, animationsSettled: null, resourcesReady: null };
@@ -151,6 +83,9 @@ function issueText(issue) {
     case 'diff-threshold-exceeded': return '差异像素比例超过验收阈值';
     case 'unexpected-pixels': return `预期变更之外还有 ${issue.count} 个超差像素（深红色）`;
     case 'missing-expected-pixels': return `预期变更区域 ${JSON.stringify(issue.bounds)} 没有实际像素差异`;
+    case 'unresolved-expected-change': return `无法解析预期变更 ${[issue.boardId, issue.id, issue.reason].filter(Boolean).join(' / ')}`;
+    case 'invalid-text-reference': return `${issue.id} 文字参考图无效（${issue.detail}）`;
+    case 'text-raster-mismatch': return `${issue.id} 与预期文字参考图有 ${issue.count} 个超差像素`;
     case 'wrong-token-color': return `可见的纯色填充未全部变为 ${issue.expected}`;
     case 'font-substitution': return `字体回退：${issue.detail}`;
     case 'same-input-file': return '源页面和 Figma 导出指向同一文件';
@@ -263,7 +198,8 @@ export async function verify(captureDir, figmaDir, outDir, options = {}) {
     exports = { boards: new Map() };
   }
   const filenames = new Map();
-  const regions = options.expectedChanges ? expectedRegions(bundle, options.expectedChanges) : null;
+  const regions = options.expectedChanges
+    ? await expectedRegions(bundle, options.expectedChanges, options.expectedChangesDir ?? captureDir, report.issues) : null;
   for (const { viewport, state } of bundle.boards) {
     const key = `${viewport}--${state}.png`.normalize('NFC').toLowerCase();
     filenames.set(key, (filenames.get(key) ?? 0) + 1);
@@ -315,29 +251,11 @@ export async function verify(captureDir, figmaDir, outDir, options = {}) {
     if (source && figma && source.inode === figma.inode) {
       board.issues.push({ code: 'same-input-file' });
     } else if (source && figma && source.size.width === figma.size.width && source.size.height === figma.size.height) {
-      const visible = (regions?.get(id) ?? []).filter(region => !region.from || hasPixel(region, source.png, pixel => pixel === rgba(region.from)));
-      const { heatPng, ...metrics } = compare(source.png, figma.png, pixelTolerance, visible);
+      const mask = regions && expectedPixelMask(regions.get(id), source.png, figma.png, pixelTolerance, board.issues);
+      const { heatPng, ...metrics } = compare(source.png, figma.png, pixelTolerance, mask);
       Object.assign(board, metrics);
       if (options.expectedChanges && metrics.plannedPixels < metrics.diffPixels) {
         board.issues.push({ code: 'unexpected-pixels', count: metrics.diffPixels - metrics.plannedPixels });
-      }
-      for (const region of visible) {
-        if (region.from) {
-          const textRegions = visible.filter(item => !item.from);
-          const wrongFill = hasPixel(region, source.png, (before, offset) => {
-            if (before !== rgba(region.from) || figma.png.data.readUInt32BE(offset) === rgba(region.to)) return false;
-            const x = offset / 4 % width, y = Math.floor(offset / 4 / width);
-            return !textRegions.some(text => x >= text.left && x < text.right && y >= text.top && y < text.bottom);
-          });
-          if (wrongFill) board.issues.push({ code: 'wrong-token-color', expected: region.to });
-        }
-        const found = hasPixel(region, source.png, (before, offset) => {
-          const after = figma.png.data.readUInt32BE(offset);
-          if (region.from) return before === rgba(region.from) && after === rgba(region.to);
-          if (region.ink) return (before === rgba(region.ink)) !== (after === rgba(region.ink));
-          return heatPng.data.readUInt32BE(offset) !== 0xf2f2f2ff;
-        });
-        if (!found) board.issues.unshift({ code: 'missing-expected-pixels', bounds: region });
       }
       const perceptual = perceptualMetrics(source.png, figma.png);
       board.ssim8 = Number(perceptual.ssim8.toFixed(6));

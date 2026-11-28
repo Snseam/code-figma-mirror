@@ -29,6 +29,8 @@ The [Edit Profile dialog](examples/public-ui/demo/index.html) is the fixed Web d
 
 **Measured at 1024 × 720, 1×.** Chromium used pinned Arimo with grayscale smoothing. Figma exported without font warnings. Both stages matched 42 layers, 5 instances, 15 text-run line counts and both click destinations.
 
+For the edited button, the verifier compares the visible `Save profile` label with a fixed 94 × 16 px crop from the accepted Figma export at the same 16/255 channel tolerance. The reference ships with the demo. [Label reference](examples/public-ui/demo/save-profile.1x.png)
+
 | Pixels exceeding 16/255 per channel | Closed | Open | Acceptance |
 | --- | ---: | ---: | --- |
 | Chromium vs. untouched Figma | 1,849 (0.251%) | 2,523 (0.342%) | Both below 1% |
@@ -95,8 +97,8 @@ node cli.mjs verify build/inbox build/figma build/visual
 ```sh
 node cli.mjs capture <scenarios.json> <capture-dir> [--font-evidence] [--raster-profile <profile.json>]
 node cli.mjs inspect <bundle.json>
-node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1]
-node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01]
+node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1] [--expected-changes <changes.json>]
+node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01] [--expected-changes <changes.json>]
 node cli.mjs review <base.json> <current.json> <figma-snapshot.json> <out-dir> [--css theme.css] [--scenarios scenarios.json]
 node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out-dir> --css theme.css --mappings mappings.json
 ```

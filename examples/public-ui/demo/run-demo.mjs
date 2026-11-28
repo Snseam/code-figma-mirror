@@ -79,8 +79,10 @@ checkEdits(bundle, original, edited, expected);
 const checked = audit(bundle, edited, 1, expected);
 await writeFile(path.join(outDir, 'audit.json'), JSON.stringify(checked, null, 2));
 check(checked.passed, 'Edited export contains unexpected structural changes');
-const visual = await verify(outDir, editedDir, path.join(outDir, 'visual'), { pixelTolerance: 16, baselineDir: originalDir, expectedChanges: expected });
-check(visual.passed, 'Edited export contains pixels outside declared change regions');
+const visual = await verify(outDir, editedDir, path.join(outDir, 'visual'), {
+  pixelTolerance: 16, baselineDir: originalDir, expectedChanges: expected, expectedChangesDir: here
+});
+check(visual.passed, `Edited export failed pixel verification. See ${path.join(outDir, 'visual', 'report.json')}`);
 console.log('\nEdited design: all structural and pixel changes match the declaration');
 
 const reviewed = review(bundle, bundle, edited, {

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { link, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { cp, link, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -119,6 +120,102 @@ test('edit verification uses actual baseline pixels and rejects a partially reco
   assert.equal((await fixture.run(options)).passed, true);
   await writeFile(path.join(fixture.figma, name), png(3, 1, [0x2563ebff, 0x2563ebff, 0x000000ff]));
   assert.equal((await fixture.run(options)).boards[0].issues[0].code, 'unexpected-pixels');
+});
+
+test('a declared label must remain visible and match its independently supplied raster after a token edit', async context => {
+  const ink = 0xffffffff, oldFill = 0x18181bff, newFill = 0x2563ebff;
+  const label = { id: 'label', kind: 'text', x: 1, y: 0, width: 3, height: 1, text: 'Old', style: { color: '#ffffff' } };
+  const button = { id: 'save', kind: 'frame', x: 0, y: 0, width: 6, height: 1,
+    style: { fill: '#18181B' }, children: [label] };
+  const fixture = await capture(context, [{ ...board('open', 6), children: [button] }], { tokens: { primary: '#18181B' } });
+  const change = { scope: 'node', op: 'update', boardId: 'desktop/open', id: 'label',
+    before: { text: 'Old' }, after: { text: 'New' }, referencePng: 'new-label.png' };
+  const options = { expectedChangesDir: fixture.root, pixelTolerance: 16, expectedChanges: { designChanges: [
+    { scope: 'token', op: 'update', id: 'primary', after: { color: '#2563EB' } }, change
+  ] } };
+  const name = 'desktop--open.png';
+  await writeFile(path.join(fixture.root, change.referencePng), png(3, 1, [newFill, ink, ink]));
+  await pair(fixture, name, png(6, 1, [oldFill, ink, oldFill, oldFill, ink, oldFill]),
+    png(6, 1, [newFill, newFill, ink, ink, ink, newFill]));
+  assert.equal((await fixture.run(options)).passed, true);
+
+  for (const glyph of [[newFill, newFill, newFill], [ink, newFill, ink]]) {
+    await writeFile(path.join(fixture.figma, name), png(6, 1, [newFill, ...glyph, ink, newFill]));
+    const result = await fixture.run(options);
+    assert.equal(result.passed, false);
+    assert.ok(result.boards[0].issues.some(issue => issue.code === 'text-raster-mismatch'));
+  }
+  await writeFile(path.join(fixture.figma, name), png(6, 1, [newFill, newFill, ink, ink, 0xff00ffff, newFill]));
+  assert.ok((await fixture.run(options)).boards[0].issues.some(issue => issue.code === 'unexpected-pixels'));
+
+  delete change.referencePng;
+  await writeFile(path.join(fixture.figma, name), png(6, 1, [newFill, newFill, newFill, newFill, ink, newFill]));
+  assert.equal((await fixture.run(options)).passed, false);
+});
+
+test('text changes and propagation resolve within each board and fail for missing or stale targets', async context => {
+  const states = ['first', 'second'];
+  const label = { id: 'label', kind: 'text', text: 'Old', x: 0, y: 0, width: 2, height: 1, style: { color: '#000000' } };
+  const fixture = await capture(context, states.map(state => ({ ...board(state), children: [label] })));
+  const oldLabel = png(2, 1, [0x000000ff, 0xffffffff]), newLabel = png(2, 1, [0xffffffff, 0x000000ff]);
+  for (const state of states) await pair(fixture, `desktop--${state}.png`, oldLabel, oldLabel);
+  const change = { scope: 'node', op: 'update', boardId: 'desktop/first', id: 'label', before: { text: 'Old' }, after: { text: 'New' } };
+  const run = overrides => fixture.run({ expectedChanges: { designChanges: [{ ...change, ...overrides }] } });
+  const unchanged = await run();
+  assert.equal(unchanged.passed, false);
+  assert.deepEqual(unchanged.boards.map(item => item.passed), [false, true]);
+  await writeFile(path.join(fixture.figma, 'desktop--first.png'), newLabel);
+  assert.equal((await run()).passed, true);
+  const both = { propagatesTo: [{ boardId: 'desktop/second', id: 'label' }] };
+  assert.equal((await run(both)).passed, false);
+  await writeFile(path.join(fixture.figma, 'desktop--second.png'), newLabel);
+  assert.equal((await run(both)).passed, true);
+  for (const overrides of [{ id: 'missing' }, { boardId: 'missing' }, { before: { text: 'Stale' } },
+    { propagatesTo: [{ boardId: 'desktop/second', id: 'missing' }] }]) {
+    const report = await run(overrides);
+    assert.ok(report.issues.some(issue => issue.code === 'unresolved-expected-change'));
+  }
+});
+
+const savedDemo = path.resolve(process.env.UI_PARITY_PUBLIC_UI_EXPORTS ?? 'build/public-ui-demo');
+const hasSavedDemo = ['bundle.json', 'source', 'original-figma/design-diff.json', 'figma/design-diff.json']
+  .every(entry => existsSync(path.join(savedDemo, entry)));
+test('the complete public demo rejects erased Save profile pixels with the genuine plugin JSON intact', {
+  skip: !process.env.UI_PARITY_PUBLIC_UI_EXPORTS && !hasSavedDemo &&
+    'Requires the two Figma Desktop demo exports'
+}, async context => {
+  const root = await tempDir(context);
+  for (const name of ['bundle.json', 'source', 'original-figma', 'figma']) {
+    await cp(path.join(savedDemo, name), path.join(root, name), { recursive: true });
+  }
+  const run = () => spawnSync(process.execPath, ['examples/public-ui/demo/run-demo.mjs', root], { encoding: 'utf8' });
+  const original = run();
+  assert.equal(original.status, 0, original.stderr);
+
+  const snapshot = JSON.parse(await readFile(path.join(root, 'figma/design-diff.json'), 'utf8'));
+  const boardId = 'desktop/open';
+  const layers = new Map(snapshot.observed.geometry.filter(row => row.boardId === boardId).map(row => [row.id, row]));
+  const label = layers.get('desktop/open##save-dialog/text-1@0');
+  assert.equal(label.text, 'Save profile');
+  let left = label.x, top = label.y;
+  for (let parent = layers.get(label.parentId); parent && parent.id !== boardId; parent = layers.get(parent.parentId)) {
+    left += parent.x;
+    top += parent.y;
+  }
+  const filename = path.join(root, 'figma', snapshot.boards.find(board => board.id === boardId).file);
+  const edited = PNG.sync.read(await readFile(filename));
+  for (let row = Math.floor(top); row < Math.ceil(top + label.height); row++) {
+    for (let column = Math.floor(left); column < Math.ceil(left + label.width); column++) {
+      edited.data.writeUInt32BE(0x2563ebff, (row * edited.width + column) * 4);
+    }
+  }
+  await writeFile(filename, PNG.sync.write(edited));
+  const erased = run();
+  assert.equal(erased.status, 1, erased.stderr);
+  const report = JSON.parse(await readFile(path.join(root, 'visual/report.json'), 'utf8'));
+  assert.equal(report.passed, false);
+  const open = report.boards.find(board => board.id === boardId);
+  assert.ok(open.issues.some(issue => issue.code === 'text-raster-mismatch' && issue.id === label.id && issue.count > 0));
 });
 
 test('a controlled font reference is labeled in the HTML and preserved in JSON', async context => {
