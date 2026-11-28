@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Public UI Demo — Edit Profile Dialog</title>
+  <link rel="stylesheet" href="./theme.css" />
+</head>
+<body>
+  <main class="canvas-card" data-state="closed">
+    <h1 class="card-title">Profile settings</h1>
+    <p class="card-desc">Update your display name and handle for team workspaces.</p>
+    <div>
+      <button
+        id="open-dialog"
+        type="button"
+        class="btn btn-primary"
+        data-component="Button"
+        data-variant="Primary"
+      >Edit Profile</button>
+    </div>
+  </main>
+
+  <div id="profile-scrim" class="scrim" data-open="false" aria-hidden="true">
+    <section
+      id="profile-dialog"
+      class="dialog-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      data-component="Dialog"
+      data-variant="Open"
+    >
+      <h2 id="dialog-title" class="card-title">Edit profile</h2>
+      <p class="card-desc">Make changes to your profile here. Click save when you are done.</p>
+      <div class="field">
+        <label>Name</label>
+        <div class="field-value">Pedro Duarte</div>
+      </div>
+      <div class="field">
+        <label>Username</label>
+        <div class="field-value">@peduarte</div>
+      </div>
+      <div class="dialog-actions">
+        <button
+          id="close-dialog"
+          type="button"
+          class="btn btn-outline"
+          data-component="Button"
+          data-variant="Outline"
+        >Cancel</button>
+        <button
+          id="save-dialog"
+          type="button"
+          class="btn btn-primary"
+          data-component="Button"
+          data-variant="Primary"
+        >Save changes</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const openBtn = document.getElementById('open-dialog');
+    const closeBtn = document.getElementById('close-dialog');
+    const saveBtn = document.getElementById('save-dialog');
+    const scrim = document.getElementById('profile-scrim');
+    const setOpen = isOpen => {
+      scrim.dataset.open = String(isOpen);
+      scrim.setAttribute('aria-hidden', String(!isOpen));
+    };
+    openBtn.addEventListener('click', () => setOpen(true));
+    closeBtn.addEventListener('click', () => setOpen(false));
+    saveBtn.addEventListener('click', () => setOpen(false));
+  </script>
+</body>
+</html>

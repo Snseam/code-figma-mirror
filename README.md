@@ -15,21 +15,58 @@ Code Figma Mirror is a deterministic code-to-Figma and Figma-to-code mirror, syn
 - **Closed-loop parity verification**: Audits structural geometry, text editability, component references, and click destinations (`audit`), and compares source vs. Figma PNGs pixel-by-pixel (`verify`).
 - **Asymmetric 3-way reverse sync**: Compares `base`, `current` code, and `figma` snapshots to detect conflicts and emit reviewable CSS token/style patches (`review`, `review-styles`) without blindly overwriting business logic.
 
-## Quick start
+## Demo & Walkthrough (Public UI)
+
+The [Edit Profile dialog](examples/public-ui/demo/index.html) is the fixed Web demo. This 48-second walkthrough uses real Ego Lite screenshots, Figma Desktop exports, a cropped plugin screenshot, the comparison report, and the generated patch.
+
+![Edit Profile in Chromium, its editable Figma layers, the ZIP export, the comparison report, and the CSS patch](examples/public-ui/assets/demo-walkthrough.gif)
+
+1. Follow the installation steps below. Open the local example in your browser, click **Edit Profile**, then **Cancel**. Run `node examples/public-ui/demo/run-demo.mjs build/public-ui-demo` to capture both states. Later runs reuse the bundle.
+2. In Figma Desktop, import **this checkout’s** `plugin/manifest.json` under **Plugins → Development → Import plugin from manifest…**. Run **UI Parity · 本地同步**, choose `bundle.json`, and import. When repeating a demo in an edited file, select **创建新的基线版本，保留现有设计** to create a fresh page. Export the untouched page and extract the ZIP directly into `build/public-ui-demo/original-figma/`.
+3. On `desktop/open`, select the **Save changes** button instance and set its **Label** property to `Save profile`. In the new page’s variable collection change `primary` from `#18181B` to `#2563EB`. Export the same page again. Extract its `design-diff.json` and both 1× PNGs directly into `build/public-ui-demo/figma/`.
+4. Rerun the command from step 1. Under `build/public-ui-demo/`, `baseline/report.html` compares Chromium with the untouched Figma export. `visual/report.html` compares the two Figma exports. `audit.json` checks layers, component properties, text and navigation. Exit code 2 requests a missing desktop export. Exit code 0 completes acceptance.
+5. Open `review/tokens.patch` and `review/review.json` under the output directory. The demo uses the saved bundle for both base and current snapshots and checks the generated diff against the working CSS with `git apply --check`. The text edit stays in the design review. Applying a CSS change is a separate decision.
+
+**Measured at 1024 × 720, 1×.** Chromium used pinned Arimo with grayscale smoothing. Figma exported without font warnings. Both stages matched 42 layers, 5 instances, 15 text-run line counts and both click destinations.
+
+For the edited button, the verifier compares the visible `Save profile` label with a fixed 94 × 16 px crop from the accepted Figma export at the same 16/255 channel tolerance. The reference ships with the demo. [Label reference](examples/public-ui/demo/save-profile.1x.png)
+
+| Pixels exceeding 16/255 per channel | Closed | Open | Acceptance |
+| --- | ---: | ---: | --- |
+| Chromium vs. untouched Figma | 1,849 (0.251%) | 2,523 (0.342%) | Both below 1% |
+| Figma before vs. after edits | 3,694 | 4,516 | 0 outside declared edit regions on either board |
+
+![Open dialog report showing the untouched and edited Figma exports and the pixel difference](examples/public-ui/assets/demo-open-report.png)
+
+The two intentional edits produced eight plugin change records, including changes propagated to bound fills and instance text. Review returned zero conflicts and one CSS declaration. The source kept `--primary: #18181b`.
+
+To try the demo, follow the install steps below. When reporting a result in Issues, include the board name, the font substitutions from the export, and the reported pixel percentage.
+
+## Installation & Quick start
 
 Requires **Node.js >= 22**. From a clone of this repository:
 
 ```sh
 npm ci
 npx playwright install chromium
+mkdir -p build/raster-acceptance/fonts
+curl -fL 'https://raw.githubusercontent.com/google/fonts/903d46673260c1f4c7f7ef67f5190fb03eab5042/ofl/arimo/Arimo%5Bwght%5D.ttf' -o build/raster-acceptance/fonts/arimo.ttf
+
+# Figma Desktop must have Arimo Regular and Bold available.
+node examples/public-ui/demo/run-demo.mjs build/public-ui-demo
+
+# Or run the Field notes benchmark capture
 npm run demo
 node cli.mjs inspect build/inbox/bundle.json
 ```
 
+- **Figma Desktop plugin.** This run loaded `plugin/manifest.json` directly from the checkout. If you use a personal development plugin ID, keep the manifest, `code.js`, and `ui.html` from the same checkout together. Use the same registered plugin for import and both exports. [Plugin setup](plugin/README.md)
+- **Figma MCP path (text, frames, solid variables, inline SVGs)**: See [mcp/README.md](mcp/README.md).
+
 The **Field notes** example ([examples/inbox/scenarios.json](examples/inbox/scenarios.json)) captures an open list, a closed list, and three detail views on both phone (`375×700`) and desktop (`1024×720`). It produces 10 boards, 36 component occurrences, 16 replayed transitions, 6 color tokens, and 10 source PNGs in `build/inbox/source/`.
 
 1. **Build the mirror in Figma.**
-   - **Desktop Plugin** ([plugin/README.md](plugin/README.md)): Create a development plugin in Figma Desktop, copy `plugin/manifest.json`, `plugin/code.js`, and `plugin/ui.html`, replace the placeholder ID in `manifest.json`, import via **Plugins → Development**, and load `build/inbox/bundle.json`.
+   - **Desktop plugin.** Open the registered plugin and load `build/inbox/bundle.json`. [Plugin setup](plugin/README.md)
    - **Figma MCP** ([mcp/README.md](mcp/README.md)): Use the transfer and render commands against your staging and output page IDs.
 2. **Test the prototype.** Open the phone flow, switch lists, open a detail view, and navigate back. Inspect any card to verify it is linked to its main component.
 3. **Audit and verify what Figma rendered.** Export the ZIP from the plugin (or collect node readbacks and 1× PNGs via [tools/cloud-export.md](tools/cloud-export.md)) into `build/figma/`, then run:
@@ -60,8 +97,8 @@ node cli.mjs verify build/inbox build/figma build/visual
 ```sh
 node cli.mjs capture <scenarios.json> <capture-dir> [--font-evidence] [--raster-profile <profile.json>]
 node cli.mjs inspect <bundle.json>
-node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1]
-node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01]
+node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1] [--expected-changes <changes.json>]
+node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01] [--expected-changes <changes.json>]
 node cli.mjs review <base.json> <current.json> <figma-snapshot.json> <out-dir> [--css theme.css] [--scenarios scenarios.json]
 node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out-dir> --css theme.css --mappings mappings.json
 ```
@@ -77,12 +114,19 @@ The table compares the **same 10 Figma PNGs** against two Chromium captures of t
 
 Figma readback verified **66 editable text layers**, **36 component instances**, and **16/16 prototype click destinations**. Against the unmodified DOM, pixel snapping and single-line text box widening shifted some positions/widths by up to `4.97 px`.
 
-**Known boundaries:**
-- Arbitrary CSS (complex grids, pseudo-elements, fluid `clamp()`, custom shaders) does not losslessly convert 1:1 to Figma Auto Layout.
-- The MCP path renders editable text, frames, solid paints, and inline SVGs; captured raster assets require the desktop plugin path.
-- Solid paint token matching in the MCP renderer binds by color value—if two tokens share the exact same hex/RGBA value, their semantic distinction collapses.
-- Cross-OS font metrics and subpixel antialiasing affect pixel-diff ratios unless controlled via `--font-evidence` and `--raster-profile`.
-- `review` / `review-styles` emit reviewable patches for unambiguous CSS tokens and explicitly mapped `width`, `height`, `border-radius`, and `font-size` properties; structural component-tree edits still require human/agent review.
+## Supported vs. Not Supported
+
+| Capability | Status | Scope & Conditions |
+| --- | --- | --- |
+| Runtime Web & Mini-Program capture | Supported | Playwright/Chromium (`capture`) and WeChat DevTools simulator (`native/`) |
+| Editable Figma reconstruction | Supported | Variables, Component Sets, Instances, Auto Layout, `ON_CLICK` (`NAVIGATE` / `OVERLAY` / `BACK`) |
+| Structural & visual verification | Supported | `audit` checks geometry, instances, text, and edges. `verify` compares PNGs and reports pixel differences, `SSIM`, and `ΔE76`. |
+| Controlled reverse CSS patches | Supported | 3-way `review` / `review-styles` emit reviewable `tokens.patch` / `styles.patch` for unambiguous CSS variables and mapped `width`, `height`, `border-radius`, `font-size` |
+| Arbitrary bidirectional code ↔ Figma sync | **Not supported** | Reverse sync is strictly controlled and reviewable—patches are **never auto-applied** and structural tree edits require human/agent review |
+| Lossless 1:1 arbitrary CSS conversion | **Not supported** | Complex CSS Grid, pseudo-elements, fluid `clamp()`, and custom shaders are approximated or flattened |
+| Raster image imports via Figma MCP | **Not supported** | MCP renders text, frames, solid paints, and inline SVGs; captured raster assets require the Desktop Plugin |
+| Unambiguous same-hex tokens in MCP | **Not supported** | MCP solid paint binding matches by color value; identical hex/RGBA tokens collapse |
+| Guaranteed cross-OS pixel parity | **Not supported** | `--font-evidence` records font information. `--raster-profile` sets controlled capture conditions. Check the actual Figma font substitutions and exported pixels for each board. |
 
 ## Capture your own UI
 

@@ -6,8 +6,8 @@ import { parseArgs } from 'node:util';
 
 const usage = `node cli.mjs capture <scenarios.json> <capture-dir> [--font-evidence] [--raster-profile <profile.json>]
 node cli.mjs inspect <bundle.json>
-node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1]
-node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01]
+node cli.mjs audit <bundle.json> <design-diff.json> <audit.json> [--geometry-tolerance 1] [--expected-changes <changes.json>]
+node cli.mjs verify <capture-dir> <figma-png-dir> <report-dir> [--pixel-tolerance 16] [--max-diff-ratio 0.01] [--expected-changes <changes.json>]
 node cli.mjs review <base.json> <current.json> <figma-snapshot.json> <out-dir> [--css theme.css] [--scenarios scenarios.json]
 node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out-dir> --css theme.css --mappings mappings.json`;
 const readJson = async file => JSON.parse(await readFile(file, 'utf8'));
@@ -77,6 +77,7 @@ async function main() {
   const { positionals, values } = parseArgs({ args, allowPositionals: true, options: {
     'pixel-tolerance': { type: 'string' }, 'max-diff-ratio': { type: 'string' }, 'font-evidence': { type: 'boolean' },
     'geometry-tolerance': { type: 'string' }, 'raster-profile': { type: 'string' },
+    'expected-changes': { type: 'string' },
     css: { type: 'string' }, scenarios: { type: 'string' }, mappings: { type: 'string' }
   } });
   const arity = { capture: 2, inspect: 1, verify: 3, review: 4, 'review-styles': 4, audit: 3 };
@@ -93,7 +94,7 @@ async function main() {
     if (stats.edges !== (config.edges || []).length * config.viewports.length) process.exitCode = 2;
   } else if (command === 'audit') {
     const { audit } = await import('./audit.mjs');
-    const result = audit(await readJson(first), await readJson(second), Number(values['geometry-tolerance'] ?? 1));
+    const result = audit(await readJson(first), await readJson(second), Number(values['geometry-tolerance'] ?? 1), values['expected-changes'] ? await readJson(values['expected-changes']) : null);
     await mkdir(path.dirname(third), { recursive: true });
     await writeFile(third, JSON.stringify(result, null, 2));
     console.log(`${result.matchedInstances} component instances · ${result.matchedEdges} matching reactions · ${result.issues.length} issues`);
@@ -103,6 +104,10 @@ async function main() {
     const options = {};
     if (values['pixel-tolerance'] !== undefined) options.pixelTolerance = Number(values['pixel-tolerance']);
     if (values['max-diff-ratio'] !== undefined) options.maxDiffRatio = Number(values['max-diff-ratio']);
+    if (values['expected-changes']) {
+      options.expectedChanges = await readJson(values['expected-changes']);
+      options.expectedChangesDir = path.dirname(values['expected-changes']);
+    }
     const report = await verify(first, second, third, options);
     console.log(`${report.boards.filter(board => board.passed).length}/${report.boards.length} passed · ${path.resolve(third, 'report.html')}`);
     if (!report.passed) process.exitCode = 2;

@@ -194,15 +194,57 @@ async function renderedFonts(page, boardId, children) {
   }
 }
 
+function activeViewportAnimations() {
+  return document.getAnimations().filter(animation => {
+    if (!animation.pending && animation.playState !== 'running') return false;
+    if (animation.timeline !== document.timeline) return false;
+    const element = animation.effect?.target;
+    if (!element?.checkVisibility({ visibilityProperty: true })) return false;
+    const rect = element?.getBoundingClientRect();
+    return rect && rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.right > 0
+      && rect.top < innerHeight && rect.left < innerWidth;
+  }).map(animation => animation.animationName || animation.transitionProperty || animation.effect.target.localName);
+}
+
+async function stableBoard(page, options, state, assertionSelectors) {
+  const deadline = Date.now() + actionTimeout;
+  let reason;
+  while (Date.now() < deadline) {
+    const animations = await page.evaluate(activeViewportAnimations);
+    if (animations.length) {
+      reason = `active animations: ${animations.slice(0, 6).join(', ')}`;
+      await page.waitForTimeout(60);
+      continue;
+    }
+    const screenshotOptions = { type: 'png', scale: 'css', fullPage: false, caret: 'hide', timeout: actionTimeout };
+    const before = await page.screenshot(screenshotOptions);
+    const url = page.url();
+    const signature = await page.evaluate(stateFingerprint);
+    const dom = await page.evaluate(collectDOM, options);
+    const assertions = await page.evaluate(stateFingerprint, { selectors: assertionSelectors });
+    const screenshot = await page.screenshot(screenshotOptions);
+    const animationsAfter = await page.evaluate(activeViewportAnimations);
+    if (before.equals(screenshot) && page.url() === url && (!state.ready || assertions.includes(state.ready))
+      && signature === await page.evaluate(stateFingerprint) && !animationsAfter.length
+      && isDeepStrictEqual(dom, await page.evaluate(collectDOM, options))) {
+      const integrity = {
+        beforeSha256: createHash('sha256').update(before).digest('hex'),
+        afterSha256: createHash('sha256').update(screenshot).digest('hex'),
+        animationsBefore: animations.length, animationsAfter: animationsAfter.length
+      };
+      return { dom, screenshot, signature, assertions, url, integrity };
+    }
+    reason = 'viewport pixels, state selector or DOM changed during capture';
+  }
+  throw Error(`Unstable viewport (${reason})`);
+}
+
 async function readBoard(page, config, viewport, state, id, ready, images, stage) {
   const selectors = [...new Set((config.edges ?? []).filter(edge => edge.from === state.id).map(edge => edge.selector))];
-  const dom = await page.evaluate(collectDOM, {
+  const { dom, screenshot, signature, assertions, url, integrity } = await stableBoard(page, {
     boardId: id, components: config.components ?? [], tokenVariables: config.tokens ?? {},
     edgeSelectors: selectors, svgImages: await svgResources(page, images)
-  });
-  const signature = await page.evaluate(stateFingerprint);
-  const url = page.url();
-  const screenshot = await page.screenshot({ type: 'png', scale: 'css', fullPage: false, caret: 'hide' });
+  }, state, [...new Set(config.states.map(item => item.ready).filter(Boolean))]);
   if (dom.crops.length) {
     const pixels = new Map(await page.evaluate(cropViewport, {
       screenshot: screenshot.toString('base64'), crops: dom.crops
@@ -218,10 +260,8 @@ async function readBoard(page, config, viewport, state, id, ready, images, stage
   const filename = `${viewport.id}--${state.id}.png`;
   await writeFile(path.join(stage, filename), screenshot);
   if (!ready) dom.warnings.push('Timed out waiting for visible images, fonts or paint.');
-  const assertions = await page.evaluate(stateFingerprint, {
-    selectors: [...new Set(config.states.map(item => item.ready).filter(Boolean))]
-  });
-  const board = { id, state: state.id, viewport: viewport.id, width: viewport.width, height: viewport.height, children: dom.children };
+  const board = { id, state: state.id, viewport: viewport.id, width: viewport.width, height: viewport.height,
+    captureIntegrity: { ...integrity, resourcesReady: ready }, children: dom.children };
   if (config.fontEvidence || config.rasterProfile) board.fontEvidence = await renderedFonts(page, id, dom.children);
   if (config.rasterProfile) {
     const mismatch = await page.evaluate(selectors => selectors.find(selector => {

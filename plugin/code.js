@@ -57,7 +57,7 @@ function validate(input) {
     dimensions(node);
     const style = node.style || {};
     for (const field of ["fill", "stroke", "color"]) if (style[field] != null) rgb(style[field]);
-    for (const field of ["radius", "strokeWidth", "opacity", "fontSize", "lineHeight"]) {
+    for (const field of ["radius", "strokeWidth", "opacity", "fontSize", "lineHeight", "backdropBlur"]) {
       if (style[field] != null) requireValue(Number.isFinite(style[field]) && style[field] >= 0, `${node.id} 的 ${field} 无效`);
     }
     requireValue(style.opacity == null || style.opacity <= 1, `${node.id} 的 opacity 超出 0–1`);
@@ -192,12 +192,15 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
   const refs = new Map();
   const byBoard = new Map();
   const building = new Set();
+  const fitted = new WeakMap();
   let shelf = null;
 
   function warn(id, message) { warnings.add(`${id} · ${message}`); }
   function register(boardId, spec, node, scope) {
     if (boardId == null) return;
-    refs.set(node.id, { scope, boardId, id: spec.id, kind: spec.kind || "board" });
+    const ref = { scope, boardId, id: spec.id, kind: spec.kind || "board" };
+    if (node.type === "TEXT" && fitted.has(spec)) ref.textFit = fitted.get(spec);
+    refs.set(node.id, ref);
     byBoard.get(boardId).set(spec.id, node);
   }
   function paint(hex) {
@@ -214,6 +217,7 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
   }
   async function resolveFont(requested, id) {
     const candidates = [requested];
+    if (/Semi Bold/.test(requested.style)) candidates.push({ family: requested.family, style: requested.style.replace("Semi Bold", "SemiBold") });
     if (requested.family.toLowerCase() === "arial") candidates.push({ family: "Arimo", style: requested.style });
     candidates.push({ family: "Inter", style: requested.style }, { family: "Inter", style: "Regular" });
     const tried = new Set();
@@ -238,6 +242,13 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
         style: style.fontStyle || (existing !== api.mixed && existing.style) || "Regular"
       };
       const font = await resolveFont(requested, spec.id);
+      const weight = { 500: "Medium", 600: "SemiBold", 700: "Bold" }[style.fontWeight];
+      if (font.family === requested.family && weight && weight !== font.style) {
+        try {
+          await load({ family: font.family, style: weight });
+          font.style = weight;
+        } catch (error) {}
+      }
       if (existing === api.mixed || existing.family !== font.family || existing.style !== font.style) node.fontName = font;
     }
     if (spec.text != null && node.characters !== spec.text) node.characters = spec.text;
@@ -265,16 +276,74 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
     if (style.strokeWidth != null) node.strokeWeight = style.strokeWidth;
     if (style.radius != null && "cornerRadius" in node) node.cornerRadius = style.radius;
     if (style.opacity != null) node.opacity = style.opacity;
+    if (style.backdropBlur > 0) {
+      if (!style.fill && !node.fills.length) node.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 1 / 255 }];
+      node.effects = [{ type: "BACKGROUND_BLUR", radius: style.backdropBlur * 2.25, visible: true }];
+    }
     if ("clipsContent" in node && (style.clip != null || defaultFill && spec.kind === "frame")) node.clipsContent = !!style.clip;
   }
   function size(node, spec) {
     if (node.width !== spec.width || node.height !== spec.height) node.resize(spec.width, spec.height);
   }
   function place(node, spec) {
-    size(node, spec);
-    node.x = spec.x;
+    const box = node.type === "TEXT" && fitted.get(spec) || spec;
+    size(node, box);
+    node.x = box.x;
     node.y = spec.y;
     node.name = spec.name;
+  }
+  async function measureLines(board) {
+    let probe;
+    const widths = new Map();
+    async function visit(parent, clipLeft, clipRight) {
+      const children = parent.children || [];
+      for (const spec of children) {
+        if (spec.figmaKey) continue;
+        const style = spec.style || {};
+        let left = clipLeft, right = clipRight;
+        for (const peer of children) {
+          if (peer === spec || peer.y >= spec.y + spec.height || peer.y + peer.height <= spec.y) continue;
+          const peerStyle = peer.style || {};
+          if (peer.kind === "frame" && !(peer.children || []).length && !peerStyle.fill && !peerStyle.stroke && !peerStyle.backdropBlur) continue;
+          if (peer.x >= spec.x + spec.width) right = Math.min(right, (peer.x + spec.x + spec.width) / 2);
+          else if (peer.x + peer.width <= spec.x) left = Math.max(left, (peer.x + peer.width + spec.x) / 2);
+          else { left = Math.max(left, spec.x); right = Math.min(right, spec.x + spec.width); }
+        }
+        if (spec.children) {
+          const contain = style.clip || spec.component;
+          await visit(spec, Math.max(left - spec.x, contain ? 0 : -Infinity),
+            Math.min(right - spec.x, contain ? spec.width : Infinity));
+        }
+        if (spec.kind !== "text" || !spec.text || /[\r\n\u2028\u2029]/.test(spec.text)
+            || !(spec.singleLine || /\/text-\d+@\d+$/.test(spec.id))
+            || ["JUSTIFY", "JUSTIFIED"].includes(style.align) || !(style.fontSize > 0)) continue;
+        const key = stable([spec.text, style, spec.width]);
+        if (!widths.has(key)) {
+          probe = api.createText();
+          await setText(probe, spec, true);
+          probe.textAutoResize = "NONE";
+          probe.resize(spec.width, spec.height);
+          probe.textAutoResize = "HEIGHT";
+          const wrappedHeight = probe.height;
+          probe.textAutoResize = "WIDTH_AND_HEIGHT";
+          widths.set(key, probe.width);
+          probe.remove();
+          probe = null;
+        }
+        const natural = widths.get(key);
+        if (natural <= spec.width) continue;
+        const anchor = style.align === "CENTER" ? 0.5 : ["RIGHT", "END"].includes(style.align) ? 1 : 0;
+        const extra = Math.ceil(natural * 64) / 64 - spec.width;
+        if (extra > Math.min(4, anchor ? (spec.x - left) / anchor : Infinity,
+          anchor < 1 ? (right - spec.x - spec.width) / (1 - anchor) : Infinity)) {
+          warn(spec.id, `单行文字超出可用宽度 (${natural} / ${spec.width})`);
+          continue;
+        }
+        fitted.set(spec, { x: spec.x - extra * anchor, width: spec.width + extra, height: spec.height });
+      }
+    }
+    try { await visit(board, 0, board.width); }
+    finally { if (probe && !probe.removed) probe.remove(); }
   }
   async function native(spec, parent, boardId) {
     let node;
@@ -334,27 +403,31 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
     main.fills = [];
     main.clipsContent = false;
     if (spec.kind === "frame") decorate(main, spec, true);
-    const shape = stable(localShape(spec));
-    const uses = [componentLayers(spec)];
-    for (const candidate of occurrences.get(key)) {
-      if (candidate !== spec && stable(localShape(candidate)) === shape) uses.push(componentLayers(candidate));
-    }
+    const uses = [spec, ...occurrences.get(key).filter(candidate => candidate !== spec && candidate.kind === spec.kind && candidate.figmaKey === spec.figmaKey)].map(componentLayers);
     const layouts = [];
-    for (let index = 0; index < uses[0].length; index++) {
+    const textProperties = new Map();
+    for (let index = 0; index < Math.max(...uses.map(layers => layers.length)); index++) {
       const positions = new Map();
       for (const layers of uses) {
         const layer = layers[index];
+        if (!layer) continue;
         const signature = geometryKey(layer);
         if (positions.has(signature)) continue;
         const childIndex = main.children.length;
         const node = spec.kind === "frame" ? await render(layer, main, null) : await native(layer, main, null);
+        if (node.type === "TEXT" && typeof main.addComponentProperty === "function") {
+          if (!textProperties.has(index)) {
+            textProperties.set(index, main.addComponentProperty(index === 0 ? "Label" : "Text " + (index + 1), "TEXT", node.characters));
+          }
+          node.componentPropertyReferences = { characters: textProperties.get(index) };
+        }
         node.constraints = { horizontal: "MIN", vertical: "MIN" };
-        node.visible = positions.size === 0;
+        node.visible = layers === uses[0];
         positions.set(signature, childIndex);
       }
       layouts.push(positions);
     }
-    const entry = { main, spec, shape, layouts, local: true };
+    const entry = { main, spec, layouts, textProperties, local: true };
     group.set(variant, entry);
     building.delete(key);
     return entry;
@@ -393,33 +466,33 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
     if (spec.kind === "image") return "fills" in node && node.type !== "TEXT";
     return "children" in node;
   }
-  function localShape(spec) {
-    const value = Object.assign({}, spec);
-    for (const field of ["id", "text", "name", "x", "y", "width", "height"]) delete value[field];
-    value.children = (spec.children || []).map(localShape);
-    return value;
-  }
   function componentLayers(spec) {
     return spec.kind === "frame" ? spec.children || [] : [Object.assign({}, spec, { x: 0, y: 0 })];
   }
   function geometryKey(layer) {
-    function box(node) {
-      return [node.x, node.y, node.width, node.height, (node.children || []).map(box)];
+    function slot(node) {
+      const fit = fitted.get(node) || node;
+      return [node.kind, node.component, node.variant, node.figmaKey, fit.x, node.y, fit.width, node.height,
+        node.style, node.svg, node.data, (node.children || []).map(slot)];
     }
-    return JSON.stringify(box(layer));
+    return stable(slot(layer));
   }
   function selectLayout(instance, spec, entry) {
+    const properties = {};
     const enabled = new Set(componentLayers(spec).map((layer, index) => {
       const childIndex = entry.layouts[index].get(geometryKey(layer));
       requireValue(childIndex !== undefined, `${spec.id} 找不到采集几何对应的主组件子层`);
+      if (layer.kind === "text" && entry.textProperties.has(index)) properties[entry.textProperties.get(index)] = layer.text;
       return childIndex;
     }));
+    if (Object.keys(properties).length) instance.setProperties(properties);
     instance.children.forEach((child, index) => {
       const visible = enabled.has(index);
       if (child.visible !== visible) child.visible = visible;
     });
   }
   function checkGeometry(node, spec, local) {
+    if (local && node.type === "TEXT" && fitted.has(spec)) spec = Object.assign({}, spec, fitted.get(spec));
     const fields = ["x", "y", "width", "height"];
     const offsets = fields.filter(field => Math.abs(node[field] - spec[field]) > 0.01);
     if (!offsets.length) return;
@@ -470,10 +543,22 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
     const pairs = [];
     try {
       if (entry.local) {
-        requireValue(entry.shape === stable(localShape(spec)), `${spec.id} 与同名变体的结构或样式不同`);
+        requireValue(entry.spec.kind === spec.kind && entry.spec.figmaKey === spec.figmaKey, `${spec.id} 与主组件来源或类型不同`);
         selectLayout(instance, spec, entry);
       }
       place(instance, spec);
+      if (entry.local && spec.kind === "frame" && stable(entry.spec.style) !== stable(spec.style)) {
+        const base = entry.spec.style || {}, style = spec.style || {};
+        if (base.fill && !style.fill) instance.fills = [];
+        if (base.stroke && !style.stroke) instance.strokes = [];
+        if (base.backdropBlur && !style.backdropBlur) instance.effects = [];
+        const overrides = {};
+        for (const field of Object.keys(style)) if (base[field] !== style[field]) overrides[field] = style[field];
+        for (const [field, fallback] of [["radius", 0], ["opacity", 1], ["clip", false], ["strokeWidth", 1]]) {
+          if (base[field] != null && style[field] == null) overrides[field] = fallback;
+        }
+        decorate(instance, { kind: "frame", style: overrides }, false);
+      }
       if (!entry.local && spec.kind === "frame") decorate(instance, spec, false);
       if (spec.kind === "text") {
         const matches = entry.local ? instance.children.filter(item => item.visible && item.type === "TEXT") : instance.findAll(item => item.type === "TEXT");
@@ -487,6 +572,7 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
       return native(spec, parent, boardId);
     }
     register(boardId, spec, instance, "node");
+    if (boardId != null) refs.get(instance.id).mainId = entry.main.id;
     for (const [child, target] of pairs) register(boardId, child, target, "node");
     return instance;
   }
@@ -522,6 +608,7 @@ function createRenderer(api, page, input, warnings, variables, occurrences) {
   async function draw(edges) {
     let left = 0;
     const startingPoints = new Map();
+    for (const board of input.boards) await measureLines(board);
     for (const board of input.boards) {
       const frame = api.createFrame();
       page.appendChild(frame);
@@ -606,6 +693,18 @@ function describeNode(api, node, ref, refs, trackSpacing) {
   return value;
 }
 
+function svgLineCount(svg) {
+  if (typeof svg !== "string" || !/<text\b/.test(svg)) return null;
+  const positions = new Set();
+  for (const match of svg.matchAll(/<tspan\b([^>]*)>([^<]*)<\/tspan>/g)) {
+    if (!match[2].trim()) continue;
+    const ordinate = /\by="(-?(?:\d+\.?\d*|\.\d+))"/.exec(match[1]);
+    if (!ordinate) return null;
+    positions.add(Number(ordinate[1]));
+  }
+  return positions.size || null;
+}
+
 async function capture(api, page, refs, tokenGroup, trackSpacing, observed) {
   const rows = [];
   const liveBoards = new Map();
@@ -625,10 +724,24 @@ async function capture(api, page, refs, tokenGroup, trackSpacing, observed) {
     if (observed && known && known.boardId === activeBoard) {
       const { x, y, width, height, type } = value;
       const geometry = { boardId: activeBoard, id: known.id, x, y, width, height, type };
-      if (type === "TEXT") geometry.text = value.text;
+      if (type === "TEXT") {
+        geometry.text = value.text;
+        if (known.textFit) geometry.textFit = known.textFit;
+        if (node.characters.trim()) {
+          const svg = await node.exportAsync({ format: "SVG_STRING", svgOutlineText: false });
+          geometry.lineCount = svgLineCount(svg);
+        }
+      }
       if (known.scope === "node" && parent && parent.scope !== "design") geometry.parentId = parent.id;
       observed.geometry.push(geometry);
-      if (type === "INSTANCE") observed.instances.push({ boardId: activeBoard, id: known.id, mainId: main ? main.id : null });
+      if (type === "INSTANCE") {
+        observed.instances.push({ boardId: activeBoard, id: known.id, mainId: main ? main.id : null });
+        const set = main && main.parent && main.parent.type === "COMPONENT_SET" ? main.parent : null;
+        observed.componentLinks.push({ boardId: activeBoard, id: known.id, instanceId: node.id,
+          sourceMainId: known.mainId || null, mainId: main && main.id, setId: set && set.id,
+          family: set ? set.name : main && main.name, variant: set ? main.name : null,
+          properties: node.componentProperties });
+      }
       for (const reaction of node.reactions || []) {
         if (!reaction.trigger || reaction.trigger.type !== "ON_CLICK") continue;
         for (const action of reactionActions(reaction)) {
@@ -783,16 +896,17 @@ async function updateTokens(api, page, data, input, digest, contract) {
   return true;
 }
 
-async function importProject(api, input, digest) {
+async function importProject(api, input, digest, newRevision = false) {
   const edges = validate(input);
   const occurrences = componentOccurrences(input.boards);
-  const supportsLayout = page => !occurrences.size || page.getPluginData("instanceLayout") === "1";
+  const rendererVersion = "4";
+  const supportsLayout = page => page.getPluginData("renderer") === rendererVersion && (!occurrences.size || page.getPluginData("instanceLayout") === "1");
   const project = input.project;
   const pages = api.root.children.filter(page => sameProject(page, project));
   pages.sort((left, right) => Number(right.getPluginData("revision")) - Number(left.getPluginData("revision")));
   const matches = digest ? pages.filter(page => page.getPluginData("digest") === digest && supportsLayout(page)) : [];
-  requireValue(matches.length <= 1, `项目 ${project} 有多个相同源文件的版本页，请核对页面 ${matches.map(page => page.id).join(", ")}`);
-  if (matches.length) {
+  requireValue(new Set(matches.map(page => page.getPluginData("revision"))).size === matches.length, `项目 ${project} 有重复版本页，请核对页面 ${matches.map(page => page.id).join(", ")}`);
+  if (!newRevision && matches.length) {
     const page = matches[0];
     await api.setCurrentPageAsync(page);
     const data = readBaseline(page);
@@ -802,7 +916,7 @@ async function importProject(api, input, digest) {
   const previous = api.currentPage;
   const prior = pages[0];
   const contract = tokenContract(input);
-  if (prior && contract && supportsLayout(prior)) {
+  if (!newRevision && prior && contract && supportsLayout(prior)) {
     await prior.loadAsync();
     const data = readBaseline(prior);
     if (await updateTokens(api, prior, data, input, digest, contract)) {
@@ -860,6 +974,7 @@ async function importProject(api, input, digest) {
     page.setPluginData("revision", String(revision));
     page.setPluginData("digest", digest);
     page.setPluginData("instanceLayout", "1");
+    page.setPluginData("renderer", rendererVersion);
     page.setPluginData("owner", page.id);
     return { page: page.name, reused: false, revision, changes: 0, warnings: data.warnings };
   } catch (error) {
@@ -875,7 +990,7 @@ async function exportProject(api, sendFile) {
   requireValue(page.getPluginData("owner") === page.id, "请打开由本插件导入的项目版本页");
   const data = readBaseline(page);
   const refs = loadRefs(data);
-  const observed = { edges: [], instances: [], geometry: [] };
+  const observed = { edges: [], instances: [], geometry: [], componentLinks: [] };
   const current = await capture(api, page, refs, data.tokenGroup, data.trackSpacing, observed);
   const changes = diffRows(data.rows, current);
   const present = new Set(current.filter(row => row.scope === "board").map(row => row.figmaId));
@@ -908,7 +1023,7 @@ async function exportProject(api, sendFile) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { validate, diffRows, boardFiles, importProject, exportProject, saveBaseline, readBaseline };
+  module.exports = { validate, diffRows, boardFiles, importProject, exportProject, saveBaseline, readBaseline, svgLineCount };
 }
 
 if (typeof figma !== "undefined") {
@@ -921,7 +1036,7 @@ if (typeof figma !== "undefined") {
     try {
       if (message.type === "import") {
         requireValue(/^[a-f0-9]{64}$/.test(message.digest), "缺少源文件 SHA-256");
-        const result = await importProject(figma, JSON.parse(message.text.replace(/^\uFEFF/, "")), message.digest);
+        const result = await importProject(figma, JSON.parse(message.text.replace(/^\uFEFF/, "")), message.digest, message.newRevision === true);
         const status = result.tokenUpdate ? "已原位更新颜色变量，保留画板和实例 ID" : result.reused ? `已打开已有版本，保留 ${result.changes} 项设计差异` : "已创建独立版本页";
         send({ type: "done", text: `${result.page}\n${status}`, warnings: result.warnings });
       } else if (message.type === "export") {
