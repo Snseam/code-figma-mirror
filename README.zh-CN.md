@@ -105,8 +105,6 @@ node cli.mjs review-styles <base.json> <current.json> <figma-snapshot.json> <out
 
 ## 已验证基准与当前边界
 
-**公开前端实测。** shadcn/ui 弹窗、Plane 手机登录页、Cal.com 预约流程共测了 9 张画板，其中 7 张来自在线页面，2 张来自冻结的组件样例。4 条点击路径都在 Chromium 中回放成功，Figma 回读的目标画板也一致。9 张画板的超差像素占比均超过 1%。案例附有原图、Figma 渲染、差异热图和离线复验命令。[查看逐板结果](examples/public-ui/README.md)
-
 下表在 macOS 上用**同一组 10 张 Figma 导出 PNG** 对比两组 Chromium 基准截图（`--pixel-tolerance 16 --max-diff-ratio 0.01`，详见 [examples/inbox/raster-capture.md](examples/inbox/raster-capture.md)）：
 
 | 浏览器基准 | 桌面端 · 1024 × 720 | 手机端 · 375 × 700 |
